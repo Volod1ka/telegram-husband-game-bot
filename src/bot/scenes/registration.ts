@@ -1,0 +1,313 @@
+import {
+  BOT_ACTIONS,
+  BOT_COMMANDS,
+  EXTEND_REGISTRATION_TIMEOUT,
+  INLINE_KEYBOARD_PARTICIPATE,
+  MIN_PARTICIPANTS_COUNT,
+  PARTICIPATE_CALLBACK_ANSWERS,
+  REGISTRATION_TIMEOUT,
+  SCENES,
+} from '@constants'
+import game from '@game/engine'
+import { t } from '@i18n'
+import type { ParseMode } from '@telegraf/types'
+import {
+  mentionWithMarkdownV2,
+  mentionsOfParticipants,
+  remainsTime,
+} from '@tools/formatting'
+import ms from 'ms'
+import { Scenes } from 'telegraf'
+import type {
+  ActionContext,
+  BotContext,
+  CommandContext,
+  NextContext,
+} from '../context'
+
+// ------- [ commands ] ------- //
+
+const deleteMessageAndCheckPrivate = async (ctx: CommandContext) => {
+  await ctx.deleteMessage()
+  return ctx.chat.type === 'private'
+}
+
+const completeRegistration = async (ctx: CommandContext) => {
+  if (ctx.chat.type === 'private') return
+
+  const currentRoom = game.rooms.get(ctx.chat.id)
+  const status = game.completeRegistration(ctx.chat.id)
+
+  if (
+    status === 'room_not_exist' ||
+    !currentRoom?.registration ||
+    status === 'not_registration'
+  ) {
+    return
+  }
+
+  let text = ''
+
+  switch (status) {
+    case 'not_enough_participants':
+      text = t('stop_game.not_enough_participants', {
+        count: MIN_PARTICIPANTS_COUNT,
+      })
+      break
+    case 'next_status':
+      text = t('start_game.next_status', { ctx })
+      break
+  }
+
+  try {
+    await ctx.telegram.editMessageText(
+      ctx.chat.id,
+      currentRoom.registration.message_id,
+      undefined,
+      text,
+      { parse_mode: 'MarkdownV2' },
+    )
+  } catch (e) {
+    await ctx.replyWithMarkdownV2(text)
+  }
+
+  try {
+    await ctx.unpinChatMessage(currentRoom.registration.message_id)
+  } catch (error) {
+    /* empty */
+  }
+
+  if (status === 'next_status') {
+    await ctx.scene.enter(SCENES.husband_search)
+  }
+}
+
+const checkStartGameAvailability = async (
+  ctx: CommandContext,
+  next: NextContext,
+) => {
+  if (await deleteMessageAndCheckPrivate(ctx)) return
+
+  if (!game.createRoom(ctx.chat.id)) {
+    const { registration } = game.rooms.get(ctx.chat.id)!
+
+    const { user: creator } = await ctx.telegram.getChatMember(
+      ctx.chat.id,
+      registration!.creator_id,
+    )
+    const text = t('start_game.room_is_created', {
+      ctx,
+      creator: mentionWithMarkdownV2(creator),
+    })
+
+    return ctx.telegram.sendMessage(ctx.from.id, text, {
+      parse_mode: 'MarkdownV2',
+    })
+  }
+
+  return next()
+}
+
+const checkGameAvailability = async (
+  ctx: CommandContext,
+  next: NextContext,
+  action: 'start' | 'stop',
+) => {
+  if (await deleteMessageAndCheckPrivate(ctx)) return
+
+  const currentRoom = game.rooms.get(ctx.chat.id)
+
+  if (currentRoom?.status !== 'registration') return
+
+  const admins = await ctx.telegram.getChatAdministrators(ctx.chat.id)
+  const is_admin = admins.find(
+    ({ user: { id: user_id } }) => user_id === ctx.from.id,
+  )
+
+  if (currentRoom.registration?.creator_id === ctx.from.id || is_admin) {
+    return next()
+  }
+
+  const { user: creator } = await ctx.telegram.getChatMember(
+    ctx.chat.id,
+    currentRoom.registration!.creator_id,
+  )
+
+  const actionText = action === 'start' ? 'start_game_now' : 'stop_game'
+  const text = t(`${actionText}.not_creator_or_admin`, {
+    ctx,
+    creator: mentionWithMarkdownV2(creator),
+  })
+
+  return ctx.telegram.sendMessage(ctx.from.id, text, {
+    parse_mode: 'MarkdownV2',
+  })
+}
+
+const checkStartGameNowAvailability = async (
+  ctx: CommandContext,
+  next: NextContext,
+) => {
+  return checkGameAvailability(ctx, next, 'start')
+}
+
+const checkStopGameAvailability = async (
+  ctx: CommandContext,
+  next: NextContext,
+) => {
+  return checkGameAvailability(ctx, next, 'start')
+}
+
+const onStartGame = async (ctx: CommandContext) => {
+  const message = await ctx.replyWithMarkdownV2(
+    t('start_game.base', { ctx }),
+    INLINE_KEYBOARD_PARTICIPATE,
+  )
+
+  await ctx.pinChatMessage(message.message_id)
+  await ctx.deleteMessage(message.message_id + 1)
+
+  if (
+    game.setMessageForRegistration(ctx.chat.id, ctx.from, message.message_id)
+  ) {
+    await game.registerTimeoutEvent(
+      ctx.chat.id,
+      async () => await completeRegistration(ctx),
+      REGISTRATION_TIMEOUT,
+    )
+  }
+}
+
+const onStartGameNow = async (ctx: CommandContext) => {
+  return completeRegistration(ctx)
+}
+
+const onStopGame = async (ctx: CommandContext) => {
+  const currentRoom = game.rooms.get(ctx.chat.id)!
+
+  if (game.closeRoom(ctx.chat.id)) {
+    try {
+      await ctx.unpinChatMessage(currentRoom.registration!.message_id)
+    } catch (error) {
+      /* empty */
+    }
+
+    try {
+      await ctx.telegram.editMessageText(
+        ctx.chat.id,
+        currentRoom.registration!.message_id,
+        undefined,
+        t('stop_game.base', { ctx, user: mentionWithMarkdownV2(ctx.from) }),
+        { parse_mode: 'MarkdownV2' },
+      )
+    } catch (e) {
+      await ctx.replyWithMarkdownV2(t('stop_game.base', { ctx }))
+    }
+  }
+}
+
+const onExtendGame = async (ctx: CommandContext) => {
+  if (await deleteMessageAndCheckPrivate(ctx)) return
+
+  const status = game.getRoomStatus(ctx.chat.id)
+
+  if (status !== 'registration') return
+
+  const remains_time = await game.extendRegistrationTimeout(
+    ctx.chat.id,
+    async () => await completeRegistration(ctx),
+    EXTEND_REGISTRATION_TIMEOUT,
+  )
+
+  if (remains_time <= 0) return
+
+  const message = await ctx.replyWithMarkdownV2(
+    t('extend_game.base', {
+      extend: remainsTime(EXTEND_REGISTRATION_TIMEOUT),
+      remains: remainsTime(remains_time),
+    }),
+  )
+
+  const timeout = setTimeout(() => {
+    try {
+      ctx.deleteMessage(message.message_id)
+    } catch (error) {
+      /* empty */
+    }
+
+    clearTimeout(timeout)
+  }, ms('7s'))
+}
+
+// ------- [ actions ] ------- //
+
+const checkParticipationAvailability = async (
+  ctx: ActionContext,
+  next: NextContext,
+) => {
+  if (ctx.chat?.type === 'private') {
+    return console.log('ioioioi')
+  }
+  return next()
+}
+
+const onParticipate = async (ctx: ActionContext) => {
+  const status = game.addParticipantToRoom(ctx.chat!.id, ctx.from)
+
+  if (status !== 'participant_added') {
+    return ctx.answerCbQuery(PARTICIPATE_CALLBACK_ANSWERS[status], {
+      show_alert: true,
+    })
+  }
+
+  const currentRoom = game.rooms.get(ctx.chat!.id)!
+  const message_text = t('start_game.set_of_participants', {
+    users: mentionsOfParticipants(currentRoom.participants),
+    count: currentRoom.participants.size,
+  })
+  const extra = {
+    parse_mode: 'MarkdownV2' as ParseMode,
+    reply_markup: INLINE_KEYBOARD_PARTICIPATE.reply_markup,
+  }
+
+  try {
+    await ctx.editMessageText(message_text, extra)
+  } catch (error) {
+    await ctx.replyWithMarkdownV2(message_text, extra)
+  }
+
+  return ctx.telegram.sendMessage(
+    ctx.from.id,
+    t('answer_cb.participate.participant_added', { ctx }),
+    { parse_mode: 'MarkdownV2' },
+  )
+}
+
+// ------- [ Scene ] ------- //
+
+const registrationScene = new Scenes.BaseScene<BotContext>(SCENES.registration)
+
+registrationScene.command(
+  BOT_COMMANDS.start_game,
+  checkStartGameAvailability,
+  onStartGame,
+)
+registrationScene.command(
+  BOT_COMMANDS.start_game_now,
+  checkStartGameNowAvailability,
+  onStartGameNow,
+)
+registrationScene.command(
+  BOT_COMMANDS.stop_game,
+  checkStopGameAvailability,
+  onStopGame,
+)
+registrationScene.command(BOT_COMMANDS.extend_game, onExtendGame)
+
+registrationScene.action(
+  BOT_ACTIONS.participate,
+  checkParticipationAvailability,
+  onParticipate,
+)
+
+export default registrationScene
