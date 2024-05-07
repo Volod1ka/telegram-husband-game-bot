@@ -19,9 +19,9 @@ questionScene.enter(async ctx => {
     return
   }
 
-  const deleted = game.closeRoom(currentRoom[0], true)
+  const deletedRoom = game.closeRoom(currentRoom[0], true)
 
-  if (deleted) {
+  if (deletedRoom) {
     await ctx.telegram.sendMessage(currentRoom[0], '[Тест] Гра завершена!')
     await ctx.scene.reset()
   }

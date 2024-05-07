@@ -36,26 +36,26 @@ const completeRegistration = async (ctx: CommandContext) => {
   if (ctx.chat.type === 'private') return
 
   const currentRoom = game.rooms.get(ctx.chat.id)
-  const status = game.completeRegistration(ctx.chat.id)
+  const roomStatus = game.completeRegistration(ctx.chat.id)
 
   if (
-    status === 'room_not_exist' ||
+    roomStatus === 'room_not_exist' ||
     !currentRoom?.registration ||
-    status === 'not_registration'
+    roomStatus === 'not_registration'
   ) {
     return
   }
 
-  let text = ''
+  let message = ''
 
-  switch (status) {
+  switch (roomStatus) {
     case 'not_enough_participants':
-      text = t('stop_game.not_enough_participants', {
+      message = t('stop_game.not_enough_participants', {
         count: MIN_PARTICIPANTS_COUNT,
       })
       break
     case 'next_status':
-      text = t('start_game.next_status', { ctx })
+      message = t('start_game.next_status', { ctx })
       break
   }
 
@@ -64,11 +64,11 @@ const completeRegistration = async (ctx: CommandContext) => {
       ctx.chat.id,
       currentRoom.registration.message_id,
       undefined,
-      text,
+      message,
       { parse_mode: 'MarkdownV2' },
     )
   } catch (e) {
-    await ctx.replyWithMarkdownV2(text)
+    await ctx.replyWithMarkdownV2(message)
   }
 
   try {
@@ -77,7 +77,7 @@ const completeRegistration = async (ctx: CommandContext) => {
     /* empty */
   }
 
-  if (status === 'next_status') {
+  if (roomStatus === 'next_status') {
     await ctx.scene.enter(SCENES.husband_search)
   }
 }
@@ -95,12 +95,12 @@ const checkStartGameAvailability = async (
       ctx.chat.id,
       registration!.creator_id,
     )
-    const text = t('start_game.room_is_created', {
+    const message = t('start_game.room_is_created', {
       ctx,
       creator: mentionWithMarkdownV2(creator),
     })
 
-    return ctx.telegram.sendMessage(ctx.from.id, text, {
+    return ctx.telegram.sendMessage(ctx.from.id, message, {
       parse_mode: 'MarkdownV2',
     })
   }
@@ -120,11 +120,11 @@ const checkGameAvailability = async (
   if (currentRoom?.status !== 'registration') return
 
   const admins = await ctx.telegram.getChatAdministrators(ctx.chat.id)
-  const is_admin = admins.find(
+  const isAdmin = admins.find(
     ({ user: { id: user_id } }) => user_id === ctx.from.id,
   )
 
-  if (currentRoom.registration?.creator_id === ctx.from.id || is_admin) {
+  if (currentRoom.registration?.creator_id === ctx.from.id || isAdmin) {
     return next()
   }
 
@@ -134,12 +134,12 @@ const checkGameAvailability = async (
   )
 
   const actionText = action === 'start' ? 'start_game_now' : 'stop_game'
-  const text = t(`${actionText}.not_creator_or_admin`, {
+  const message = t(`${actionText}.not_creator_or_admin`, {
     ctx,
     creator: mentionWithMarkdownV2(creator),
   })
 
-  return ctx.telegram.sendMessage(ctx.from.id, text, {
+  return ctx.telegram.sendMessage(ctx.from.id, message, {
     parse_mode: 'MarkdownV2',
   })
 }
@@ -209,22 +209,22 @@ const onStopGame = async (ctx: CommandContext) => {
 const onExtendGame = async (ctx: CommandContext) => {
   if (await deleteMessageAndCheckPrivate(ctx)) return
 
-  const status = game.getRoomStatus(ctx.chat.id)
+  const roomStatus = game.getRoomStatus(ctx.chat.id)
 
-  if (status !== 'registration') return
+  if (roomStatus !== 'registration') return
 
-  const remains_time = await game.extendRegistrationTimeout(
+  const remains = await game.extendRegistrationTimeout(
     ctx.chat.id,
     async () => await completeRegistration(ctx),
     EXTEND_REGISTRATION_TIMEOUT,
   )
 
-  if (remains_time <= 0) return
+  if (remains <= 0) return
 
   const message = await ctx.replyWithMarkdownV2(
     t('extend_game.base', {
       extend: remainsTime(EXTEND_REGISTRATION_TIMEOUT),
-      remains: remainsTime(remains_time),
+      remains: remainsTime(remains),
     }),
   )
 
@@ -261,28 +261,28 @@ const checkParticipationAvailability = async (
 }
 
 const onParticipate = async (ctx: ActionContext) => {
-  const status = game.addParticipantToRoom(ctx.chat!.id, ctx.from)
+  const roomStatus = game.addParticipantToRoom(ctx.chat!.id, ctx.from)
 
-  if (status !== 'participant_added') {
-    return ctx.answerCbQuery(PARTICIPATE_CALLBACK_ANSWERS[status], {
+  if (roomStatus !== 'participant_added') {
+    return ctx.answerCbQuery(PARTICIPATE_CALLBACK_ANSWERS[roomStatus], {
       show_alert: true,
     })
   }
 
   const currentRoom = game.rooms.get(ctx.chat!.id)!
-  const message_text = t('start_game.set_of_participants', {
+  const message = t('start_game.set_of_participants', {
     users: mentionsOfParticipants(currentRoom.participants),
     count: currentRoom.participants.size,
   })
-  const extra = {
+  const extraProps = {
     parse_mode: 'MarkdownV2' as ParseMode,
     reply_markup: INLINE_KEYBOARD_PARTICIPATE.reply_markup,
   }
 
   try {
-    await ctx.editMessageText(message_text, extra)
+    await ctx.editMessageText(message, extraProps)
   } catch (error) {
-    await ctx.replyWithMarkdownV2(message_text, extra)
+    await ctx.replyWithMarkdownV2(message, extraProps)
   }
 
   return ctx.telegram.sendMessage(

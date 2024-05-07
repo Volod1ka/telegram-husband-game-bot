@@ -8,20 +8,20 @@ import type { ActionContext, BotContext } from '../context'
 // ------- [ commands ] ------- //
 
 const searchHusband = async (ctx: BotContext) => {
-  let chat_id = ctx.chat!.id
+  let chatId = ctx.chat!.id
 
   if (ctx.chat?.type === 'private') {
-    const room = game.getRoomOfUser(ctx.chat.id)
+    const currentRoom = game.getRoomOfUser(ctx.chat.id)
 
-    if (!room) {
+    if (!currentRoom) {
       // TODO: ops не вдалось створити кімнату
       return ctx.scene.reset()
     }
 
-    chat_id = room[0]
+    chatId = currentRoom[0]
   }
 
-  const [user_id] = game.getRandomRequestHusbandRole(chat_id)
+  const [user_id] = game.getRandomRequestHusbandRole(chatId)
 
   await ctx.telegram.sendMessage(user_id, t('husband.search'), {
     parse_mode: 'MarkdownV2',
@@ -33,10 +33,10 @@ const searchHusband = async (ctx: BotContext) => {
 
 const completeHusbandSearch = async (
   ctx: ActionContext,
-  chat_id: Chat['id'],
+  chatId: Chat['id'],
 ) => {
-  game.assignRandomNumberToMembers(chat_id)
-  game.completeHusbandSearch(chat_id)
+  game.assignRandomNumberToMembers(chatId)
+  game.completeHusbandSearch(chatId)
 
   await ctx.scene.enter(SCENES.question)
 }
