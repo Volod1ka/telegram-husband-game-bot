@@ -14,7 +14,7 @@ composer.start(async (ctx, next) => {
   }
 
   await ctx.replyWithMarkdownV2(
-    t('start', { ctx }),
+    t('start.welcome', { ctx }),
     INLINE_KEYBOARD_INVITE_CHAT(ctx.botInfo.username),
   )
   await ctx.react('💅')

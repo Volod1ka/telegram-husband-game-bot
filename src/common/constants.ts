@@ -73,7 +73,7 @@ export const BOT_COMMANDS_WITH_DESCRIPTION: BotCommand[] = [
   },
   {
     command: BOT_COMMANDS.extend_game,
-    description: `продовжити час реєстрації на ${remainsTime(EXTEND_REGISTRATION_TIMEOUT)}`, //30 секунд
+    description: `продовжити час реєстрації на ${remainsTime(EXTEND_REGISTRATION_TIMEOUT)}`,
   },
   {
     command: BOT_COMMANDS.help,

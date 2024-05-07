@@ -155,7 +155,7 @@ const checkStopGameAvailability = async (
   ctx: CommandContext,
   next: NextContext,
 ) => {
-  return checkGameAvailability(ctx, next, 'start')
+  return checkGameAvailability(ctx, next, 'stop')
 }
 
 const onStartGame = async (ctx: CommandContext) => {
@@ -245,9 +245,18 @@ const checkParticipationAvailability = async (
   ctx: ActionContext,
   next: NextContext,
 ) => {
-  if (ctx.chat?.type === 'private') {
-    return console.log('ioioioi')
+  if (ctx.chat?.type === 'private') return
+
+  try {
+    const chatWithBot = await ctx.telegram.getChat(ctx.from.id)
+
+    if (chatWithBot.type !== 'private') {
+      throw new Error('Missing chat started by participation with bot')
+    }
+  } catch (error) {
+    return ctx.answerCbQuery(t('start.no_chat'), { show_alert: true })
   }
+
   return next()
 }
 
