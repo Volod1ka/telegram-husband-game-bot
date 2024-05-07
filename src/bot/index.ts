@@ -4,7 +4,7 @@ import { getSessionKey } from '@tools/utils'
 import { toDate } from 'date-fns'
 import { Scenes, Telegraf, session } from 'telegraf'
 import { mainComposer } from './composers'
-import type { BotContext } from './context'
+import type { BotContext, SessionOptions } from './context'
 import { husbandSearchScene, questionScene, registrationScene } from './scenes'
 
 if (!Config.BOT_TOKEN) {
@@ -14,16 +14,12 @@ if (!Config.BOT_TOKEN) {
 const bot = new Telegraf<BotContext>(Config.BOT_TOKEN)
 const stage = new Scenes.Stage<BotContext>(
   [registrationScene, husbandSearchScene, questionScene],
-  {
-    default: SCENES.registration,
-  },
+  { default: SCENES.registration },
 )
 
-bot.use(
-  session({
-    getSessionKey,
-  }),
-)
+const sessionOptions = { getSessionKey } satisfies SessionOptions
+
+bot.use(session(sessionOptions))
 bot.use(mainComposer)
 bot.use(stage.middleware())
 // bot.use(async (ctx, next) => {
