@@ -1,7 +1,7 @@
 import Config from '@config'
 import { SCENES } from '@constants'
 import { getSessionKey } from '@tools/utils'
-import { toDate } from 'date-fns'
+import { format, toDate } from 'date-fns'
 import { Scenes, Telegraf, session } from 'telegraf'
 import { mainComposer } from './composers'
 import type { BotContext, SessionOptions } from './context'
@@ -23,14 +23,19 @@ bot.use(session(sessionOptions))
 bot.use(mainComposer)
 bot.use(stage.middleware())
 // bot.use(async (ctx, next) => {
-//   ctx.telegram.setMyCommands(BOT_COMMANDS_WITH_DESCRIPTION)
-
+//   await ctx.telegram.setMyCommands(BOT_COMMANDS_WITH_DESCRIPTION)
 //   return await next()
 // })
 
-bot.catch(error => {
-  const date = toDate(Date.now()).toISOString()
-  console.log(`[${date}] error: ${JSON.stringify(error)}\n`)
+bot.catch((error, ctx) => {
+  const date = format(toDate(Date.now()), '[dd/MM/yyyy – kk:mm:ss]')
+  const chat = JSON.stringify(ctx.chat)
+  const from = JSON.stringify(ctx.from)
+  const details = JSON.stringify(error)
+
+  console.groupCollapsed(`\n${date} ≈> error:`)
+  console.log(`| chat: ${chat}\n| from: ${from}\n|\n| details: ${details}\n`)
+  console.groupEnd()
 })
 
 export default bot

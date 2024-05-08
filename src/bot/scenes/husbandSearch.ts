@@ -31,14 +31,34 @@ const searchHusband = async (ctx: BotContext) => {
 
 // ------- [ actions ] ------- //
 
+const sendMessageToParticipations = async (
+  ctx: ActionContext,
+  chatId: Chat['id'],
+) => {
+  const { participants } = game.rooms.get(chatId)!
+
+  for (const [participantId, participant] of participants) {
+    if (participant.role !== 'member' || participant.afk) continue
+
+    await ctx.telegram.sendMessage(
+      participantId,
+      t('member.welcome', { number: participant.number }),
+      {
+        parse_mode: 'MarkdownV2',
+      },
+    )
+  }
+}
+
 const completeHusbandSearch = async (
   ctx: ActionContext,
   chatId: Chat['id'],
 ) => {
   game.assignRandomNumberToMembers(chatId)
+  await sendMessageToParticipations(ctx, chatId)
   game.completeHusbandSearch(chatId)
 
-  await ctx.scene.enter(SCENES.question)
+  return ctx.scene.enter(SCENES.question)
 }
 
 const onPickHusbandRole = async (ctx: ActionContext, accepted: boolean) => {
