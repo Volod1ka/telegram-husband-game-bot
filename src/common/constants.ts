@@ -2,6 +2,7 @@ import type { AddParticipantToRoomStatus } from '@game/types'
 import { t } from '@i18n'
 import type { ActionTrigger, BotCommand, CommandTrigger } from '@models/bot'
 import type { GameRoom, RoomEvent, ScenesName } from '@models/game'
+import type { TelegramEmoji } from '@telegraf/types'
 import { remainsTime } from '@tools/formatting'
 import ms from 'ms'
 import { Markup } from 'telegraf'
@@ -17,6 +18,9 @@ export const EXTEND_REGISTRATION_TIMEOUT = ms('10s') // ms('30s')
 
 // ------- [ default data ] ------- //
 export const TELEGRAM_LINK = 'https://t.me/'
+export const TELEGRAM_MENTION = 'tg://user?id='
+
+export const EMPTY_ANSWER = ' – '
 
 export const DEFAULT_GAME_ROOM: GameRoom = {
   answers: new Map(),
@@ -35,6 +39,19 @@ export const EMPTY_ROOM_EVENT: RoomEvent = {
   timeout_ms: 0,
 } satisfies RoomEvent // Represents an empty room event for handle
 
+export const REACTIONS: TelegramEmoji[] = [
+  '🍌',
+  '🍓',
+  '🍾',
+  '👀',
+  '👍',
+  '💅',
+  '🔥',
+  '👌',
+  '🤝',
+  '✍',
+  '🆒',
+]
 // ------- [ scenes name ] ------- //
 
 export const SCENES: Record<ScenesName, ScenesName> = {

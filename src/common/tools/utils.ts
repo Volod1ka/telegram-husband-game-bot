@@ -1,6 +1,7 @@
+import { REACTIONS } from '@constants'
 import game from '@game/engine'
 import type { Participant } from '@models/roles'
-import type { User } from '@telegraf/types'
+import type { TelegramEmoji, User } from '@telegraf/types'
 import type { BotContext } from 'bot/context'
 
 export const createParticipant = (user: User): Participant => {
@@ -20,4 +21,9 @@ export const getSessionKey = (ctx: BotContext) => {
   }
 
   return `game-room:${chatId}`
+}
+
+export const getRandomEmoji = (): TelegramEmoji => {
+  const index = Math.floor(Math.random() * REACTIONS.length)
+  return REACTIONS[index]
 }

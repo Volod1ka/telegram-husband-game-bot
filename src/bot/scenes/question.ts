@@ -1,6 +1,7 @@
 import { INLINE_KEYBOARD_CHAT_WITH_BOT, SCENES } from '@constants'
 import game from '@game/engine'
 import { t } from '@i18n'
+import { getRandomEmoji } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import { message } from 'telegraf/filters'
 import type { BotContext, NextContext, TextMessageContext } from '../context'
@@ -44,7 +45,7 @@ const onSendQuestion = async (ctx: TextMessageContext) => {
   const userId = ctx.message.from.id
   const [roomId] = game.getRoomOfUser(userId)!
 
-  await ctx.react('🍓')
+  await ctx.react(getRandomEmoji())
   const { message_id } = await ctx.telegram.sendMessage(
     roomId,
     t('husband.send_question', { question: ctx.message.text }),
@@ -59,18 +60,16 @@ const onSendQuestion = async (ctx: TextMessageContext) => {
     message_id,
     text: ctx.message.text,
   })
+  game.completeHusbandQuestion(roomId)
 
-  return ctx.scene.enter(SCENES.answers)
+  await ctx.scene.enter(SCENES.answers)
 }
 
 // ------- [ Scene ] ------- //
 
 const questionScene = new Scenes.BaseScene<BotContext>(SCENES.question)
 
-questionScene.enter(async (ctx, next) => {
-  await requestForQuestion(ctx)
-  return next()
-})
+questionScene.enter(requestForQuestion)
 
 questionScene.on(
   message('text'),

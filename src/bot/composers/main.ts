@@ -1,6 +1,7 @@
 import { INLINE_KEYBOARD_INVITE_CHAT } from '@constants'
 import game from '@game/engine'
 import { t } from '@i18n'
+import { getRandomEmoji } from '@tools/utils'
 import { Composer } from 'telegraf'
 import type { BotContext } from '../context'
 
@@ -17,7 +18,7 @@ composer.start(async (ctx, next) => {
     t('start.welcome', { ctx }),
     INLINE_KEYBOARD_INVITE_CHAT(ctx.botInfo.username),
   )
-  await ctx.react('💅')
+  await ctx.react(getRandomEmoji())
 })
 
 // TODO: fill data

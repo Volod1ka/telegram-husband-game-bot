@@ -7,6 +7,7 @@ import { mainComposer } from './composers'
 import type { BotContext, SessionOptions } from './context'
 import {
   answersScene,
+  eliminationScene,
   husbandSearchScene,
   questionScene,
   registrationScene,
@@ -18,7 +19,13 @@ if (!Config.BOT_TOKEN) {
 
 const bot = new Telegraf<BotContext>(Config.BOT_TOKEN)
 const stage = new Scenes.Stage<BotContext>(
-  [registrationScene, husbandSearchScene, questionScene, answersScene],
+  [
+    registrationScene,
+    husbandSearchScene,
+    questionScene,
+    answersScene,
+    eliminationScene,
+  ],
   { default: SCENES.registration },
 )
 

@@ -46,16 +46,16 @@ const completeRegistration = async (ctx: CommandContext) => {
     return
   }
 
-  let message = ''
+  let textMessage = ''
 
   switch (roomStatus) {
     case 'not_enough_participants':
-      message = t('stop_game.not_enough_participants', {
+      textMessage = t('stop_game.not_enough_participants', {
         count: MIN_PARTICIPANTS_COUNT,
       })
       break
     case 'next_status':
-      message = t('start_game.next_status', { ctx })
+      textMessage = t('start_game.next_status', { ctx })
       break
   }
 
@@ -64,11 +64,11 @@ const completeRegistration = async (ctx: CommandContext) => {
       ctx.chat.id,
       currentRoom.registration.message_id,
       undefined,
-      message,
+      textMessage,
       { parse_mode: 'MarkdownV2' },
     )
   } catch (e) {
-    await ctx.replyWithMarkdownV2(message)
+    await ctx.replyWithMarkdownV2(textMessage)
   }
 
   try {
@@ -95,12 +95,12 @@ const checkStartGameAvailability = async (
       ctx.chat.id,
       registration!.creator_id,
     )
-    const message = t('start_game.room_is_created', {
+    const textMessage = t('start_game.room_is_created', {
       ctx,
       creator: mentionWithMarkdownV2(creator),
     })
 
-    return ctx.telegram.sendMessage(ctx.from.id, message, {
+    return ctx.telegram.sendMessage(ctx.from.id, textMessage, {
       parse_mode: 'MarkdownV2',
     })
   }
@@ -134,12 +134,12 @@ const checkGameAvailability = async (
   )
 
   const actionText = action === 'start' ? 'start_game_now' : 'stop_game'
-  const message = t(`${actionText}.not_creator_or_admin`, {
+  const textMessage = t(`${actionText}.not_creator_or_admin`, {
     ctx,
     creator: mentionWithMarkdownV2(creator),
   })
 
-  return ctx.telegram.sendMessage(ctx.from.id, message, {
+  return ctx.telegram.sendMessage(ctx.from.id, textMessage, {
     parse_mode: 'MarkdownV2',
   })
 }
@@ -159,17 +159,15 @@ const checkStopGameAvailability = async (
 }
 
 const onStartGame = async (ctx: CommandContext) => {
-  const message = await ctx.replyWithMarkdownV2(
+  const { message_id } = await ctx.replyWithMarkdownV2(
     t('start_game.base', { ctx }),
     INLINE_KEYBOARD_PARTICIPATE,
   )
 
-  await ctx.pinChatMessage(message.message_id)
-  await ctx.deleteMessage(message.message_id + 1)
+  await ctx.pinChatMessage(message_id)
+  await ctx.deleteMessage(message_id + 1)
 
-  if (
-    game.setMessageForRegistration(ctx.chat.id, ctx.from, message.message_id)
-  ) {
+  if (game.setMessageForRegistration(ctx.chat.id, ctx.from, message_id)) {
     await game.registerTimeoutEvent(
       ctx.chat.id,
       async () => await completeRegistration(ctx),
@@ -183,11 +181,11 @@ const onStartGameNow = async (ctx: CommandContext) => {
 }
 
 const onStopGame = async (ctx: CommandContext) => {
-  const currentRoom = game.rooms.get(ctx.chat.id)!
+  const { registration } = game.rooms.get(ctx.chat.id)!
 
   if (game.closeRoom(ctx.chat.id)) {
     try {
-      await ctx.unpinChatMessage(currentRoom.registration!.message_id)
+      await ctx.unpinChatMessage(registration!.message_id)
     } catch (error) {
       /* empty */
     }
@@ -195,7 +193,7 @@ const onStopGame = async (ctx: CommandContext) => {
     try {
       await ctx.telegram.editMessageText(
         ctx.chat.id,
-        currentRoom.registration!.message_id,
+        registration!.message_id,
         undefined,
         t('stop_game.base', { ctx, user: mentionWithMarkdownV2(ctx.from) }),
         { parse_mode: 'MarkdownV2' },
@@ -221,7 +219,7 @@ const onExtendGame = async (ctx: CommandContext) => {
 
   if (remains <= 0) return
 
-  const message = await ctx.replyWithMarkdownV2(
+  const { message_id } = await ctx.replyWithMarkdownV2(
     t('extend_game.base', {
       extend: remainsTime(EXTEND_REGISTRATION_TIMEOUT),
       remains: remainsTime(remains),
@@ -230,7 +228,7 @@ const onExtendGame = async (ctx: CommandContext) => {
 
   const timeout = setTimeout(() => {
     try {
-      ctx.deleteMessage(message.message_id)
+      ctx.deleteMessage(message_id)
     } catch (error) {
       /* empty */
     }
@@ -270,7 +268,7 @@ const onParticipate = async (ctx: ActionContext) => {
   }
 
   const currentRoom = game.rooms.get(ctx.chat!.id)!
-  const message = t('start_game.set_of_participants', {
+  const textMessage = t('start_game.set_of_participants', {
     users: mentionsOfParticipants(currentRoom.participants),
     count: currentRoom.participants.size,
   })
@@ -280,9 +278,9 @@ const onParticipate = async (ctx: ActionContext) => {
   }
 
   try {
-    await ctx.editMessageText(message, extraProps)
+    await ctx.editMessageText(textMessage, extraProps)
   } catch (error) {
-    await ctx.replyWithMarkdownV2(message, extraProps)
+    await ctx.replyWithMarkdownV2(textMessage, extraProps)
   }
 
   return ctx.telegram.sendMessage(
