@@ -349,6 +349,18 @@ export class GameEngine {
     )
   }
 
+  getHusbandInGame(chatId: Chat['id']) {
+    const currentRoom = this.rooms.get(chatId)
+
+    if (!currentRoom) return null
+
+    return (
+      [...currentRoom.participants.entries()].find(
+        ([, participant]) => participant.role === 'husband' && !participant.afk,
+      ) ?? null
+    )
+  }
+
   everyoneAnswered(chatId: Chat['id']): boolean {
     const currentRoom = this.rooms.get(chatId)
 

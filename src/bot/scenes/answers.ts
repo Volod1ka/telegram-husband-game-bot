@@ -22,9 +22,16 @@ const requestForAnswers = async (ctx: BotContext) => {
   }
 
   const members = game.getParticipantsInGame(chatId)
+  const husband = game.getHusbandInGame(chatId)
 
   for (const [memberId] of members) {
     await ctx.telegram.sendMessage(memberId, t('member.answer'), {
+      parse_mode: 'MarkdownV2',
+    })
+  }
+
+  if (husband) {
+    await ctx.telegram.sendMessage(husband[0], t('husband.ask_send_message'), {
       parse_mode: 'MarkdownV2',
     })
   }
@@ -59,11 +66,40 @@ const completeAnswers = async (ctx: TextMessageContext) => {
   await ctx.scene.enter(SCENES.elimination)
 }
 
-const checkSendAnswerAvailability = async (
+const checkSendTextMessageAvailability = async (
   ctx: TextMessageContext,
   next: NextContext,
 ) => {
   if (ctx.chat.type !== 'private') return
+
+  return next()
+}
+
+const onSendMessageByHusband = async (
+  ctx: TextMessageContext,
+  next: NextContext,
+) => {
+  const {
+    text,
+    from: { id: userId },
+  } = ctx.message
+
+  if (game.isHusbandRole(userId)) {
+    const currentRoom = game.getRoomOfUser(userId)
+
+    if (!currentRoom) return
+
+    const [roomId] = currentRoom
+
+    return Promise.all([
+      ctx.react(getRandomEmoji()),
+      ctx.telegram.sendMessage(
+        roomId,
+        t('husband.send_message', { message: text }),
+        { parse_mode: 'HTML' },
+      ),
+    ])
+  }
 
   return next()
 }
@@ -93,7 +129,8 @@ answersScene.enter(requestForAnswers)
 
 answersScene.on(
   message('text'),
-  async (ctx, next) => checkSendAnswerAvailability(ctx, next),
+  async (ctx, next) => checkSendTextMessageAvailability(ctx, next),
+  async (ctx, next) => onSendMessageByHusband(ctx, next),
   async ctx => onSendAnswer(ctx),
 )
 
