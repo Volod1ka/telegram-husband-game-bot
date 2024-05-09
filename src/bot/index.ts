@@ -5,7 +5,12 @@ import { format, toDate } from 'date-fns'
 import { Scenes, Telegraf, session } from 'telegraf'
 import { mainComposer } from './composers'
 import type { BotContext, SessionOptions } from './context'
-import { husbandSearchScene, questionScene, registrationScene } from './scenes'
+import {
+  answersScene,
+  husbandSearchScene,
+  questionScene,
+  registrationScene,
+} from './scenes'
 
 if (!Config.BOT_TOKEN) {
   throw new Error('BOT_TOKEN must be provided!\nP.S. Check your .env file.')
@@ -13,7 +18,7 @@ if (!Config.BOT_TOKEN) {
 
 const bot = new Telegraf<BotContext>(Config.BOT_TOKEN)
 const stage = new Scenes.Stage<BotContext>(
-  [registrationScene, husbandSearchScene, questionScene],
+  [registrationScene, husbandSearchScene, questionScene, answersScene],
   { default: SCENES.registration },
 )
 

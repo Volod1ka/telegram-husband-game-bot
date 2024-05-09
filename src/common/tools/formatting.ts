@@ -18,7 +18,7 @@ export const mentionWithMarkdownV2 = (user: User) => {
 export const mentionsOfParticipants = (
   participants: GameRoom['participants'],
 ) => {
-  return Array.from(participants.values())
+  return [...participants.values()]
     .map(participant => mentionWithMarkdownV2(participant.user))
     .join(', ')
 }

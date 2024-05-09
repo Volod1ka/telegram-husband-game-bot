@@ -1,30 +1,81 @@
-import { SCENES } from '@constants'
+import { INLINE_KEYBOARD_CHAT_WITH_BOT, SCENES } from '@constants'
 import game from '@game/engine'
+import { t } from '@i18n'
 import { Scenes } from 'telegraf'
-import type { BotContext } from '../context'
+import { message } from 'telegraf/filters'
+import type { BotContext, NextContext, TextMessageContext } from '../context'
 
-// ------- [ commands ] ------- //
+// ------- [ enter ] ------- //
 
-// ------- [ actions ] ------- //
+const requestForQuestion = async (ctx: BotContext) => {
+  let chatId = ctx.chat!.id
+
+  if (ctx.chat?.type === 'private') {
+    const currentRoom = game.getRoomOfUser(ctx.chat.id)
+
+    if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
+
+    chatId = currentRoom[0]
+  }
+
+  const husband = game.getHusbandInRoom(chatId)
+
+  if (!husband) return
+
+  await ctx.telegram.sendMessage(husband[0], t('husband.question'), {
+    parse_mode: 'MarkdownV2',
+  })
+}
+
+// ------- [ text messages ] ------- //
+
+const checkSendQuestionAvailability = async (
+  ctx: TextMessageContext,
+  next: NextContext,
+) => {
+  if (ctx.chat.type !== 'private') return
+
+  if (!game.isHusbandRole(ctx.message.from.id)) return ctx.react('🤷‍♀')
+
+  return next()
+}
+
+const onSendQuestion = async (ctx: TextMessageContext) => {
+  const userId = ctx.message.from.id
+  const [roomId] = game.getRoomOfUser(userId)!
+
+  await ctx.react('🍓')
+  const { message_id } = await ctx.telegram.sendMessage(
+    roomId,
+    t('husband.send_question', { question: ctx.message.text }),
+    {
+      parse_mode: 'HTML',
+      reply_markup: INLINE_KEYBOARD_CHAT_WITH_BOT(ctx.botInfo.username)
+        .reply_markup,
+    },
+  )
+
+  game.setQuestionByHasband(userId, {
+    message_id,
+    text: ctx.message.text,
+  })
+
+  return ctx.scene.enter(SCENES.answers)
+}
 
 // ------- [ Scene ] ------- //
 
 const questionScene = new Scenes.BaseScene<BotContext>(SCENES.question)
 
-// ? stress test (undone)
-questionScene.enter(async ctx => {
-  const currentRoom = game.getRoomOfUser(ctx.from!.id)
-
-  if (!currentRoom) {
-    return
-  }
-
-  const deletedRoom = game.closeRoom(currentRoom[0], true)
-
-  if (deletedRoom) {
-    await ctx.telegram.sendMessage(currentRoom[0], '[Тест] Гра завершена!')
-    await ctx.scene.reset()
-  }
+questionScene.enter(async (ctx, next) => {
+  await requestForQuestion(ctx)
+  return next()
 })
+
+questionScene.on(
+  message('text'),
+  async (ctx, next) => checkSendQuestionAvailability(ctx, next),
+  async ctx => onSendQuestion(ctx),
+)
 
 export default questionScene

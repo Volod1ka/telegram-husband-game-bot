@@ -5,7 +5,7 @@ import type { Chat } from '@telegraf/types'
 import { Scenes } from 'telegraf'
 import type { ActionContext, BotContext } from '../context'
 
-// ------- [ commands ] ------- //
+// ------- [ enter ] ------- //
 
 const searchHusband = async (ctx: BotContext) => {
   let chatId = ctx.chat!.id
@@ -13,17 +13,14 @@ const searchHusband = async (ctx: BotContext) => {
   if (ctx.chat?.type === 'private') {
     const currentRoom = game.getRoomOfUser(ctx.chat.id)
 
-    if (!currentRoom) {
-      // TODO: ops не вдалось створити кімнату
-      return ctx.scene.reset()
-    }
+    if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
 
     chatId = currentRoom[0]
   }
 
-  const [user_id] = game.getRandomRequestHusbandRole(chatId)
+  const [userId] = game.getRandomRequestHusbandRole(chatId)
 
-  await ctx.telegram.sendMessage(user_id, t('husband.search'), {
+  await ctx.telegram.sendMessage(userId, t('husband.search'), {
     parse_mode: 'MarkdownV2',
     reply_markup: INLINE_KEYBOARD_ROLE.reply_markup,
   })
@@ -110,7 +107,7 @@ export const onDenyHusbandRole = async (ctx: ActionContext) => {
 // ------- [ Scene ] ------- //
 
 const husbandSearchScene = new Scenes.BaseScene<BotContext>(
-  SCENES.husband_search,
+  SCENES.search_husband,
 )
 
 husbandSearchScene.enter(async (ctx, next) => {

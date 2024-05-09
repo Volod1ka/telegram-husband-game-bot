@@ -1,7 +1,7 @@
 import type { MessageId, User } from '@telegraf/types'
 import type { Participant } from './roles'
 
-export type ScenesName = 'registration' | 'husband_search' | 'question'
+export type ScenesName = GameStatus
 
 export type GameStatus =
   | 'registration'
@@ -11,15 +11,18 @@ export type GameStatus =
   | 'elimination'
   | 'finished'
 
-export type Registration = {
+export type Registration = Pick<MessageId, 'message_id'> & {
   creator_id: User['id']
-  message_id: MessageId['message_id']
+}
+
+export type Question = Pick<MessageId, 'message_id'> & {
+  text: string
 }
 
 export type GameRoom = {
   registration: Registration | null
   status: GameStatus
-  question: string | null
+  question: Question | null
   answers: Map<User['id'], string>
   number_of_skips: number
   eliminated_participant: User['id'] | null

@@ -16,6 +16,7 @@ export const MAX_REGISTRATION_TIMEOUT = ms('3m')
 export const EXTEND_REGISTRATION_TIMEOUT = ms('10s') // ms('30s')
 
 // ------- [ default data ] ------- //
+export const TELEGRAM_LINK = 'https://t.me/'
 
 export const DEFAULT_GAME_ROOM: GameRoom = {
   answers: new Map(),
@@ -38,8 +39,11 @@ export const EMPTY_ROOM_EVENT: RoomEvent = {
 
 export const SCENES: Record<ScenesName, ScenesName> = {
   registration: 'registration',
-  husband_search: 'husband_search',
+  search_husband: 'search_husband',
   question: 'question',
+  answers: 'answers',
+  elimination: 'elimination',
+  finished: 'finished',
 } // Represents available scenes
 
 // ------- [ interactive ] ------- //
@@ -103,7 +107,7 @@ export const INLINE_KEYBOARD_INVITE_CHAT = (bot_username: string) =>
   Markup.inlineKeyboard([
     Markup.button.url(
       t('button.invite_to_chat'),
-      `https://t.me/${bot_username}?startgroup=true`,
+      `${TELEGRAM_LINK}${bot_username}?startgroup=true`,
     ),
   ]) // Represents an inline keyboard for invite a bot to groups
 
@@ -113,3 +117,11 @@ export const INLINE_KEYBOARD_ROLE = Markup.inlineKeyboard([
     Markup.button.callback(t('button.no'), BOT_ACTIONS.deny_husband_role),
   ],
 ])
+
+export const INLINE_KEYBOARD_CHAT_WITH_BOT = (bot_username: string) =>
+  Markup.inlineKeyboard([
+    Markup.button.url(
+      t('button.go_to_chat'),
+      `${TELEGRAM_LINK}${bot_username}`,
+    ),
+  ]) // Represents an inline keyboard for navigate to the bot chat

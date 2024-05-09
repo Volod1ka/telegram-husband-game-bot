@@ -78,7 +78,7 @@ const completeRegistration = async (ctx: CommandContext) => {
   }
 
   if (roomStatus === 'next_status') {
-    await ctx.scene.enter(SCENES.husband_search)
+    await ctx.scene.enter(SCENES.search_husband)
   }
 }
 

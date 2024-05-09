@@ -4,7 +4,7 @@ import {
   MAX_REGISTRATION_TIMEOUT,
   MIN_PARTICIPANTS_COUNT,
 } from '@constants'
-import type { GameRoom, RoomEvent } from '@models/game'
+import type { GameRoom, Question, RoomEvent } from '@models/game'
 import type { Participant } from '@models/roles'
 import type { Chat, MessageId, User } from '@telegraf/types'
 import { createParticipant } from '@tools/utils'
@@ -97,12 +97,10 @@ export class GameEngine {
   }
 
   getRoomOfUser(userId: User['id']) {
-    if (!this.rooms.size) {
-      return null
-    }
+    if (!this.rooms.size) return null
 
     return (
-      Array.from(this.rooms.entries()).find(([, room]) =>
+      [...this.rooms.entries()].find(([, room]) =>
         room.participants.has(userId),
       ) ?? null
     )
@@ -205,7 +203,7 @@ export class GameEngine {
 
   getRandomRequestHusbandRole(chatId: Chat['id']) {
     const currentRoom = this.rooms.get(chatId)!
-    const participants = Array.from(currentRoom.participants.entries())
+    const participants = [...currentRoom.participants.entries()]
     const filteredParticipants = participants.filter(
       ([, participant]) =>
         participant.role === 'unknown' &&
@@ -244,7 +242,7 @@ export class GameEngine {
 
   allСanceledHusbandRole(chatId: Chat['id']) {
     const currentRoom = this.rooms.get(chatId)!
-    const participant = Array.from(currentRoom.participants.entries()).find(
+    const participant = [...currentRoom.participants.entries()].find(
       ([, participant]) =>
         participant.role === 'unknown' &&
         participant.request_husband !== 'denied',
@@ -255,9 +253,7 @@ export class GameEngine {
 
   assignRandomNumberToMembers(chatId: Chat['id']) {
     const currentRoom = this.rooms.get(chatId)
-    const husband = Array.from(currentRoom?.participants?.entries() ?? []).find(
-      ([, member]) => member.role === 'husband',
-    )
+    const husband = this.getHusbandInRoom(chatId)
 
     if (!currentRoom || !husband) {
       return
@@ -287,14 +283,40 @@ export class GameEngine {
     currentRoom.participants.set(husband[0], husband[1])
   }
 
-  completeHusbandSearch(chat_id: Chat['id']) {
-    const currentRoom = this.rooms.get(chat_id)
+  completeHusbandSearch(chatId: Chat['id']) {
+    const currentRoom = this.rooms.get(chatId)
 
-    if (currentRoom?.status !== 'search_husband') {
-      return
-    }
+    if (currentRoom?.status !== 'search_husband') return
 
-    this.rooms.set(chat_id, { ...currentRoom, status: 'question' })
+    this.rooms.set(chatId, { ...currentRoom, status: 'question' })
+  }
+
+  getHusbandInRoom(chatId: Chat['id']) {
+    const currentRoom = this.rooms.get(chatId)
+
+    return currentRoom
+      ? [...currentRoom.participants.entries()].find(
+          ([, participant]) => participant.role === 'husband',
+        ) || null
+      : null
+  }
+
+  isHusbandRole(userId: User['id']) {
+    const currentRoom = this.getRoomOfUser(userId)
+
+    if (!currentRoom) return false
+
+    const participant = currentRoom[1].participants.get(userId)
+
+    return !!participant && participant.role === 'husband'
+  }
+
+  setQuestionByHasband(userId: User['id'], question: Question) {
+    const currentRoom = this.getRoomOfUser(userId)
+
+    if (!currentRoom || currentRoom[1].status !== 'question') return
+
+    this.rooms.set(currentRoom[0], { ...currentRoom[1], question })
   }
 }
 
