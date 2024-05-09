@@ -24,14 +24,14 @@ export type GameRoom = {
   status: GameStatus
   question: Question | null
   answers: Map<User['id'], string>
-  number_of_skips: number
-  eliminated_participant: User['id'] | null
+  numberOfSkips: number
+  eliminatedParticipant: User['id'] | null
   participants: Map<User['id'], Participant>
 }
 
 export type RoomEvent = {
   timeout: NodeJS.Timeout | null
-  start_date: number
-  date_extended: boolean
-  timeout_ms: number
+  startDate: number
+  dateExtended: boolean
+  timeoutMs: number
 }

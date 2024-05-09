@@ -43,7 +43,7 @@ bot.catch((error, ctx) => {
   const date = format(toDate(Date.now()), '[dd/MM/yyyy – kk:mm:ss]')
   const chat = JSON.stringify(ctx.chat)
   const from = JSON.stringify(ctx.from)
-  const details = JSON.stringify(error)
+  const details = error instanceof TypeError ? error : JSON.stringify(error)
 
   console.groupCollapsed(`\n${date} ≈> error:`)
   console.log(`| chat: ${chat}\n| from: ${from}\n|\n| details: ${details}\n`)

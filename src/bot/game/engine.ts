@@ -30,15 +30,13 @@ export class GameEngine {
   ) {
     const event = this.events.get(chatId)
 
-    if (!event || !event.date_extended) {
-      return
-    }
+    if (!event || !event.dateExtended) return
 
-    event.date_extended = false
-    event.start_date = Date.now()
-    event.timeout_ms = ms
-    event.timeout = setTimeout(() => {
-      callback()
+    event.dateExtended = false
+    event.startDate = Date.now()
+    event.timeoutMs = ms
+    event.timeout = setTimeout(async () => {
+      await callback()
       this.unregisterTimeoutEvent(chatId)
     }, ms)
     event.timeout.ref()
@@ -47,42 +45,36 @@ export class GameEngine {
   unregisterTimeoutEvent(chatId: Chat['id']) {
     const event = this.events.get(chatId)
 
-    if (!event?.timeout) {
-      return
-    }
+    if (!event?.timeout) return
 
-    event.date_extended = true
-    event.start_date = 0
-    event.timeout_ms = 0
+    event.dateExtended = true
+    event.startDate = 0
+    event.timeoutMs = 0
     clearTimeout(event.timeout)
   }
 
-  async extendRegistrationTimeout(
+  extendRegistrationTimeout(
     chatId: Chat['id'],
     callback: () => Promise<void>,
     extendMs: number,
   ) {
     const event = this.events.get(chatId)
 
-    if (!event) {
-      return 0
-    }
+    if (!event) return 0
 
-    const difference = Date.now() - event.start_date
-    event.timeout_ms += extendMs
+    const difference = Date.now() - event.startDate
+    event.timeoutMs += extendMs
     const remainsTime = Math.min(
-      event.timeout_ms - difference,
+      event.timeoutMs - difference,
       MAX_REGISTRATION_TIMEOUT,
     )
 
-    if (!event.date_extended && difference < event.timeout_ms) {
-      if (event.timeout) {
-        clearTimeout(event.timeout)
-      }
+    if (!event.dateExtended && difference < event.timeoutMs) {
+      if (event.timeout) clearTimeout(event.timeout)
 
       event.timeout = setInterval(async () => {
         await callback()
-        await this.unregisterTimeoutEvent(chatId)
+        this.unregisterTimeoutEvent(chatId)
       }, remainsTime)
       event.timeout.ref()
 
@@ -107,9 +99,7 @@ export class GameEngine {
   }
 
   createRoom(chatId: Chat['id']): boolean {
-    if (this.rooms.has(chatId)) {
-      return false
-    }
+    if (this.rooms.has(chatId)) return false
 
     this.events.set(chatId, EMPTY_ROOM_EVENT)
     return !!this.rooms.set(chatId, DEFAULT_GAME_ROOM)
@@ -122,9 +112,7 @@ export class GameEngine {
   ) {
     const currentRoom = this.rooms.get(chatId)
 
-    if (!currentRoom) {
-      return false
-    }
+    if (!currentRoom) return false
 
     const updatedRoom = {
       ...currentRoom,
@@ -134,7 +122,6 @@ export class GameEngine {
     return !!this.rooms.set(chatId, updatedRoom)
   }
 
-  // ? TODO: close only in status registration or finished?
   closeRoom(chatId: Chat['id'], force?: boolean): boolean {
     const roomStatus = this.getRoomStatus(chatId)
 
@@ -156,17 +143,11 @@ export class GameEngine {
   ): AddParticipantToRoomStatus {
     const currentRoom = this.rooms.get(chatId)
 
-    if (!currentRoom) {
-      return 'room_not_exist'
-    }
+    if (!currentRoom) return 'room_not_exist'
 
-    if (this.getRoomOfUser(user.id)) {
-      return 'participant_in_game'
-    }
+    if (this.getRoomOfUser(user.id)) return 'participant_in_game'
 
-    if (currentRoom.status !== 'registration') {
-      return 'not_registration'
-    }
+    if (currentRoom.status !== 'registration') return 'not_registration'
 
     const updatedRoom = {
       ...currentRoom,
@@ -184,13 +165,9 @@ export class GameEngine {
   completeRegistration(chatId: Chat['id']): FinishRegistrationStatus {
     const currentRoom = this.rooms.get(chatId)
 
-    if (!currentRoom) {
-      return 'room_not_exist'
-    }
+    if (!currentRoom) return 'room_not_exist'
 
-    if (currentRoom?.status !== 'registration') {
-      return 'not_registration'
-    }
+    if (currentRoom?.status !== 'registration') return 'not_registration'
 
     if (currentRoom.participants.size >= MIN_PARTICIPANTS_COUNT) {
       this.rooms.set(chatId, { ...currentRoom, status: 'search_husband' })
@@ -225,9 +202,7 @@ export class GameEngine {
   ): AcceptHusbandRoleStatus {
     const currentRoom = this.rooms.get(chatId)
 
-    if (!currentRoom || currentRoom.status !== 'search_husband') {
-      return 'cancel'
-    }
+    if (!currentRoom || currentRoom.status !== 'search_husband') return 'cancel'
 
     const updatedParticipant = (
       accepted
@@ -255,9 +230,7 @@ export class GameEngine {
     const currentRoom = this.rooms.get(chatId)
     const husband = this.getHusbandInRoom(chatId)
 
-    if (!currentRoom || !husband) {
-      return
-    }
+    if (!currentRoom || !husband) return
 
     currentRoom.participants.delete(husband[0])
 
@@ -343,7 +316,7 @@ export class GameEngine {
 
     if (currentRoom?.status !== 'answers') return
 
-    // TODO: eliminate members ho is afk, but not eliminated
+    // TODO: eliminate members who is afk, but not eliminated
 
     this.rooms.set(chatId, { ...currentRoom, status: 'elimination' })
   }

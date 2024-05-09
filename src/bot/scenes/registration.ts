@@ -168,7 +168,7 @@ const onStartGame = async (ctx: CommandContext) => {
   await ctx.deleteMessage(message_id + 1)
 
   if (game.setMessageForRegistration(ctx.chat.id, ctx.from, message_id)) {
-    await game.registerTimeoutEvent(
+    game.registerTimeoutEvent(
       ctx.chat.id,
       async () => await completeRegistration(ctx),
       REGISTRATION_TIMEOUT,
@@ -211,7 +211,7 @@ const onExtendGame = async (ctx: CommandContext) => {
 
   if (roomStatus !== 'registration') return
 
-  const remains = await game.extendRegistrationTimeout(
+  const remains = game.extendRegistrationTimeout(
     ctx.chat.id,
     async () => await completeRegistration(ctx),
     EXTEND_REGISTRATION_TIMEOUT,

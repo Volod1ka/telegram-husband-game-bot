@@ -17,5 +17,5 @@ export type TextMessageContext = NarrowedContext<
 export type NextContext = () => Promise<void>
 
 export type SessionOptions = Parameters<
-  typeof session<object, BotContext, 'session'>
+  typeof session<Scenes.SceneSession, BotContext, 'session'>
 >[0]

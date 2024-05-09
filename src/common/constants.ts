@@ -24,8 +24,8 @@ export const EMPTY_ANSWER = ' – '
 
 export const DEFAULT_GAME_ROOM: GameRoom = {
   answers: new Map(),
-  eliminated_participant: null,
-  number_of_skips: ELIMINATION_SKIPS_COUNT,
+  eliminatedParticipant: null,
+  numberOfSkips: ELIMINATION_SKIPS_COUNT,
   participants: new Map(),
   question: null,
   registration: null,
@@ -33,10 +33,10 @@ export const DEFAULT_GAME_ROOM: GameRoom = {
 } satisfies GameRoom // Represents a new game room
 
 export const EMPTY_ROOM_EVENT: RoomEvent = {
-  date_extended: true,
-  start_date: 0,
+  dateExtended: true,
+  startDate: 0,
   timeout: null,
-  timeout_ms: 0,
+  timeoutMs: 0,
 } satisfies RoomEvent // Represents an empty room event for handle
 
 export const REACTIONS: TelegramEmoji[] = [
