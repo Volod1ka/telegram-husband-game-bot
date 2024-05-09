@@ -256,6 +256,23 @@ export class GameEngine {
     currentRoom.participants.set(husband[0], husband[1])
   }
 
+  sortMemberByNumber(chatId: Chat['id']) {
+    const currentRoom = this.rooms.get(chatId)
+
+    if (!currentRoom) return
+
+    const sortedEntries = [...currentRoom.participants.entries()].sort(
+      ([, prev], [, next]) => {
+        if (prev.role === 'member' && next.role === 'member') {
+          return prev.number - next.number
+        }
+        return prev.role === 'member' ? -1 : 1
+      },
+    )
+
+    currentRoom.participants = new Map(sortedEntries)
+  }
+
   completeHusbandSearch(chatId: Chat['id']) {
     const currentRoom = this.rooms.get(chatId)
 

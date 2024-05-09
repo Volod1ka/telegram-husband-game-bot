@@ -52,6 +52,7 @@ const completeHusbandSearch = async (
   chatId: Chat['id'],
 ) => {
   game.assignRandomNumberToMembers(chatId)
+  game.sortMemberByNumber(chatId)
   await sendMessageToParticipations(ctx, chatId)
   game.completeHusbandSearch(chatId)
 
