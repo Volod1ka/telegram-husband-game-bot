@@ -259,7 +259,8 @@ const checkParticipationAvailability = async (
 }
 
 const onParticipate = async (ctx: ActionContext) => {
-  const roomStatus = game.addParticipantToRoom(ctx.chat!.id, ctx.from)
+  const chatId = ctx.chat!.id
+  const roomStatus = game.addParticipantToRoom(chatId, ctx.from)
 
   if (roomStatus !== 'participant_added') {
     return ctx.answerCbQuery(PARTICIPATE_CALLBACK_ANSWERS[roomStatus], {
@@ -267,7 +268,21 @@ const onParticipate = async (ctx: ActionContext) => {
     })
   }
 
-  const currentRoom = game.rooms.get(ctx.chat!.id)!
+  try {
+    await ctx.telegram.sendMessage(
+      ctx.from.id,
+      t('answer_cb.participate.participant_added', { ctx }),
+      { parse_mode: 'MarkdownV2' },
+    )
+  } catch (error) {
+    game.removeParticipantFromRoom(chatId, ctx.from)
+
+    return ctx.answerCbQuery(t('answer_cb.participate.blocked_chat'), {
+      show_alert: true,
+    })
+  }
+
+  const currentRoom = game.rooms.get(chatId)!
   const textMessage = t('start_game.set_of_participants', {
     users: mentionsOfParticipants(currentRoom.participants),
     count: currentRoom.participants.size,
@@ -277,17 +292,7 @@ const onParticipate = async (ctx: ActionContext) => {
     reply_markup: INLINE_KEYBOARD_PARTICIPATE.reply_markup,
   }
 
-  try {
-    await ctx.editMessageText(textMessage, extraProps)
-  } catch (error) {
-    await ctx.replyWithMarkdownV2(textMessage, extraProps)
-  }
-
-  return ctx.telegram.sendMessage(
-    ctx.from.id,
-    t('answer_cb.participate.participant_added', { ctx }),
-    { parse_mode: 'MarkdownV2' },
-  )
+  await ctx.editMessageText(textMessage, extraProps)
 }
 
 // ------- [ Scene ] ------- //

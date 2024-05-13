@@ -149,17 +149,17 @@ export class GameEngine {
 
     if (currentRoom.status !== 'registration') return 'not_registration'
 
-    const updatedRoom = {
-      ...currentRoom,
-      participants: new Map(currentRoom.participants).set(
-        user.id,
-        createParticipant(user),
-      ),
-    } satisfies GameRoom
-
-    this.rooms.set(chatId, updatedRoom)
+    currentRoom.participants.set(user.id, createParticipant(user))
 
     return 'participant_added'
+  }
+
+  removeParticipantFromRoom(chatId: Chat['id'], { id: userId }: User) {
+    const currentRoom = this.rooms.get(chatId)
+
+    if (!currentRoom) return
+
+    currentRoom.participants.delete(userId)
   }
 
   completeRegistration(chatId: Chat['id']): FinishRegistrationStatus {
@@ -174,7 +174,7 @@ export class GameEngine {
       return 'next_status'
     }
 
-    this.closeRoom(chatId)
+    this.closeRoom(chatId, true)
     return 'not_enough_participants'
   }
 
