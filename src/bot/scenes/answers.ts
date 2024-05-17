@@ -1,7 +1,11 @@
-import { INLINE_KEYBOARD_CHAT_WITH_BOT, SCENES } from '@constants'
+import {
+  ANSWERS_TIMEOUT,
+  INLINE_KEYBOARD_CHAT_WITH_BOT,
+  SCENES,
+} from '@constants'
 import game from '@game/engine'
 import { t } from '@i18n'
-import type { ParseMode } from '@telegraf/types'
+import type { Chat, ParseMode } from '@telegraf/types'
 import { answerOfMembers } from '@tools/formatting'
 import { getRandomEmoji } from '@tools/utils'
 import { Scenes } from 'telegraf'
@@ -11,16 +15,13 @@ import type { BotContext, NextContext, TextMessageContext } from '../context'
 // ------- [ enter ] ------- //
 
 const requestForAnswers = async (ctx: BotContext) => {
-  let chatId = ctx.chat!.id
+  if (!ctx.from) return ctx.scene.reset()
 
-  if (ctx.chat?.type === 'private') {
-    const currentRoom = game.getRoomOfUser(ctx.chat.id)
+  const currentRoom = game.getRoomOfUser(ctx.from.id)
 
-    if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
+  if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
 
-    chatId = currentRoom[0]
-  }
-
+  const [chatId] = currentRoom
   const members = game.getParticipantsInGame(chatId)
   const husband = game.getHusbandInGame(chatId)
 
@@ -35,33 +36,43 @@ const requestForAnswers = async (ctx: BotContext) => {
       parse_mode: 'MarkdownV2',
     })
   }
+
+  game.registerTimeoutEvent(
+    chatId,
+    async () => onTimeoutEvent(ctx, chatId),
+    ANSWERS_TIMEOUT,
+  )
+}
+
+// ------- [ actions ] ------- //
+
+const onTimeoutEvent = async (ctx: BotContext, chatId: Chat['id']) => {
+  game.setAFKMembersInAnswers(chatId)
+  await completeAnswers(ctx, chatId)
 }
 
 // ------- [ text messages ] ------- //
 
-const completeAnswers = async (ctx: TextMessageContext) => {
-  const currentRoom = game.getRoomOfUser(ctx.message.from.id)
+const completeAnswers = async (ctx: BotContext, chatId: Chat['id']) => {
+  const { answers, question } = game.rooms.get(chatId)!
+  const participants = game.getParticipantsInGame(chatId)
 
-  if (!currentRoom) return
-
-  const [roomId, room] = currentRoom
-  const participants = game.getParticipantsInGame(roomId)
-
-  const textMessage = answerOfMembers(participants, room.answers)
+  const textMessage = answerOfMembers(participants, answers)
   const extraProps = {
     reply_markup: INLINE_KEYBOARD_CHAT_WITH_BOT(ctx.botInfo.username)
       .reply_markup,
     parse_mode: 'HTML' as ParseMode,
     reply_parameters: {
-      message_id: room.question!.message_id,
-      chat_id: roomId,
+      message_id: question!.message_id,
+      chat_id: chatId,
       allow_sending_without_reply: true,
     },
   }
 
-  await ctx.telegram.sendMessage(roomId, textMessage, extraProps)
-  game.clearAnswers(roomId)
-  game.completeMemberAnswers(roomId)
+  await ctx.telegram.sendMessage(chatId, textMessage, extraProps)
+
+  game.clearAnswers(chatId)
+  game.completeMemberAnswers(chatId)
 
   await ctx.scene.enter(SCENES.elimination)
 }
@@ -116,8 +127,10 @@ const onSendAnswer = async (ctx: TextMessageContext) => {
 
   await ctx.react(getRandomEmoji())
 
-  if (game.everyoneAnswered(currentRoom[0])) {
-    return completeAnswers(ctx)
+  const [roomId] = currentRoom
+
+  if (game.everyoneAnswered(roomId)) {
+    return completeAnswers(ctx, roomId)
   }
 }
 

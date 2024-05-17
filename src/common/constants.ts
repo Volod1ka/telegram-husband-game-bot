@@ -17,6 +17,7 @@ export const REGISTRATION_TIMEOUT = ms('15s') //ms('1m')
 export const MAX_REGISTRATION_TIMEOUT = ms('3m')
 export const EXTEND_REGISTRATION_TIMEOUT = ms('10s') // ms('30s')
 export const ACCEPT_HUSBAND_ROLE_TIMEOUT = ms('10s') // ms('1m')
+export const ANSWERS_TIMEOUT = ms('10s') // ms('5m')
 
 // ------- [ default data ] ------- //
 export const TELEGRAM_LINK = 'https://t.me/'
@@ -26,6 +27,10 @@ export const EMPTY_ANSWER = ' – '
 
 export const DEFAULT_GAME_ROOM: GameRoom = {
   answers: new Map(),
+  // {
+  //   finished: false,
+  //   list: new Map(),
+  // },
   eliminatedParticipant: null,
   numberOfSkips: ELIMINATION_SKIPS_COUNT,
   participants: new Map(),
@@ -53,6 +58,15 @@ export const REACTIONS: TelegramEmoji[] = [
   '🤝',
   '✍',
   '🆒',
+  '❤‍🔥',
+  '💘',
+  '💋',
+  '🕊',
+  '😈',
+  '👏',
+  '💘',
+  '💯',
+  '⚡',
 ]
 // ------- [ scenes name ] ------- //
 

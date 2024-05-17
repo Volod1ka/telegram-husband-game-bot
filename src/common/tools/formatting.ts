@@ -47,17 +47,18 @@ export const answerOfMembers = (
   for (const [memberId, member] of membersInGame) {
     if (member.role !== 'member') continue
 
+    const { afk, eliminated, number, user } = member
     const answer = answers.get(memberId)
 
     lines += t('member.answers.line', {
-      number: member.number,
-      answer: answer?.length ? answer : EMPTY_ANSWER,
+      number,
+      answer: answer || EMPTY_ANSWER,
     })
 
-    if (member.afk) {
+    if (afk && !eliminated) {
       afks += t('member.answers.afk', {
-        number: member.number,
-        user: mentionWithHTML(member.user),
+        number,
+        user: mentionWithHTML(user),
       })
     }
   }

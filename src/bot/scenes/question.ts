@@ -9,16 +9,13 @@ import type { BotContext, NextContext, TextMessageContext } from '../context'
 // ------- [ enter ] ------- //
 
 const requestForQuestion = async (ctx: BotContext) => {
-  let chatId = ctx.chat!.id
+  if (!ctx.from) return ctx.scene.reset()
 
-  if (ctx.chat?.type === 'private') {
-    const currentRoom = game.getRoomOfUser(ctx.chat.id)
+  const currentRoom = game.getRoomOfUser(ctx.from.id)
 
-    if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
+  if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
 
-    chatId = currentRoom[0]
-  }
-
+  const [chatId] = currentRoom
   const husband = game.getHusbandInRoom(chatId)
 
   if (!husband) return
@@ -36,7 +33,7 @@ const checkSendQuestionAvailability = async (
 ) => {
   if (ctx.chat.type !== 'private') return
 
-  if (!game.isHusbandRole(ctx.message.from.id)) return ctx.react('🤷‍♀')
+  if (!game.isHusbandRole(ctx.message.from.id)) return ctx.react('👨‍💻')
 
   return next()
 }

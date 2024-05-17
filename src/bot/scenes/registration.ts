@@ -185,26 +185,29 @@ const onStartGameNow = async (ctx: CommandContext) => {
 }
 
 const onStopGame = async (ctx: CommandContext) => {
-  const { registration } = game.rooms.get(ctx.chat.id)!
+  const chatId = ctx.chat.id
+  const { registration } = game.rooms.get(chatId)!
 
-  if (game.closeRoom(ctx.chat.id)) {
-    try {
-      await ctx.unpinChatMessage(registration!.message_id)
-    } catch (error) {
-      /* empty */
-    }
+  if (!game.closeRoom(chatId)) return
 
-    try {
-      await ctx.telegram.editMessageText(
-        ctx.chat.id,
-        registration!.message_id,
-        undefined,
-        t('stop_game.base', { ctx, user: mentionWithMarkdownV2(ctx.from) }),
-        { parse_mode: 'MarkdownV2' },
-      )
-    } catch (e) {
-      await ctx.replyWithMarkdownV2(t('stop_game.base', { ctx }))
-    }
+  game.unregisterTimeoutEvent(chatId)
+
+  try {
+    await ctx.telegram.editMessageText(
+      chatId,
+      registration!.message_id,
+      undefined,
+      t('stop_game.base', { ctx, user: mentionWithMarkdownV2(ctx.from) }),
+      { parse_mode: 'MarkdownV2' },
+    )
+  } catch (e) {
+    await ctx.replyWithMarkdownV2(t('stop_game.base', { ctx }))
+  }
+
+  try {
+    await ctx.unpinChatMessage(registration!.message_id)
+  } catch (error) {
+    /* empty */
   }
 }
 

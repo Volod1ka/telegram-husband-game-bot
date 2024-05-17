@@ -74,8 +74,8 @@ export class GameEngine {
       if (event.timeout) clearTimeout(event.timeout)
 
       event.timeout = setInterval(async () => {
-        await callback()
         this.unregisterTimeoutEvent(chatId)
+        await callback()
       }, remainsTime)
       event.timeout.ref()
 
@@ -334,7 +334,16 @@ export class GameEngine {
 
     if (currentRoom?.status !== 'answers') return
 
-    // TODO: eliminate members who is afk, but not eliminated
+    for (const [participantId, participant] of currentRoom.participants) {
+      if (participant.role !== 'member') continue
+
+      if (participant.afk && !participant.eliminated) {
+        currentRoom.participants.set(participantId, {
+          ...participant,
+          eliminated: true,
+        })
+      }
+    }
 
     this.rooms.set(chatId, { ...currentRoom, status: 'elimination' })
   }
@@ -350,10 +359,8 @@ export class GameEngine {
       return false
     }
 
-    const [roomId, room] = currentRoom
-    const answers = room.answers.set(userId, answer)
-
-    return !!this.rooms.set(roomId, { ...room, answers })
+    const [, room] = currentRoom
+    return !!room.answers.set(userId, answer)
   }
 
   getParticipantsInGame(chatId: Chat['id']) {
@@ -377,6 +384,25 @@ export class GameEngine {
         ([, participant]) => participant.role === 'husband' && !participant.afk,
       ) ?? null
     )
+  }
+
+  setAFKMembersInAnswers(chatId: Chat['id']) {
+    const currentRoom = this.rooms.get(chatId)
+
+    if (!currentRoom || currentRoom.status !== 'answers') return
+
+    const participantsInGame = this.getParticipantsInGame(chatId)
+
+    for (const [participantId, participant] of participantsInGame) {
+      const answer = currentRoom.answers.get(participantId)
+
+      if (!answer?.length) {
+        currentRoom.participants.set(participantId, {
+          ...participant,
+          afk: true,
+        })
+      }
+    }
   }
 
   everyoneAnswered(chatId: Chat['id']): boolean {

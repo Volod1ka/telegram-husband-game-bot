@@ -19,11 +19,16 @@ export type Question = Pick<MessageId, 'message_id'> & {
   text: string
 }
 
+export type Answers = {
+  finished: boolean
+  list: Map<User['id'], string>
+}
+
 export type GameRoom = {
   registration: Registration | null
   status: GameStatus
   question: Question | null
-  answers: Map<User['id'], string>
+  answers: Map<User['id'], string> // Answers
   numberOfSkips: number
   eliminatedParticipant: User['id'] | null
   participants: Map<User['id'], Participant>

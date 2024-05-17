@@ -38,14 +38,14 @@ const searchHusband = async (ctx: BotContext) => {
 
   game.registerTimeoutEvent(
     chatId,
-    async () => onAFK(nextUserCtx, participantId, message_id),
+    async () => onTimeoutEvent(nextUserCtx, participantId, message_id),
     ACCEPT_HUSBAND_ROLE_TIMEOUT,
   )
 }
 
 // ------- [ actions ] ------- //
 
-const onAFK = async (
+const onTimeoutEvent = async (
   ctx: BotContext,
   userId: User['id'],
   messageId: Message['message_id'],
