@@ -55,7 +55,7 @@ const onAFK = async (
       userId,
       messageId,
       undefined,
-      t('husband.deny_role'),
+      t('husband.afk_deny_role'),
       {
         parse_mode: 'MarkdownV2',
       },
