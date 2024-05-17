@@ -12,9 +12,11 @@ import { Markup } from 'telegraf'
 export const ELIMINATION_SKIPS_COUNT = 1
 export const MIN_PARTICIPANTS_COUNT = 2 // 4
 
+// TODO: change props in finish state
 export const REGISTRATION_TIMEOUT = ms('15s') //ms('1m')
 export const MAX_REGISTRATION_TIMEOUT = ms('3m')
 export const EXTEND_REGISTRATION_TIMEOUT = ms('10s') // ms('30s')
+export const ACCEPT_HUSBAND_ROLE_TIMEOUT = ms('10s') // ms('1m')
 
 // ------- [ default data ] ------- //
 export const TELEGRAM_LINK = 'https://t.me/'

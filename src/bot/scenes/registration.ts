@@ -35,8 +35,9 @@ const deleteMessageAndCheckPrivate = async (ctx: CommandContext) => {
 const completeRegistration = async (ctx: CommandContext) => {
   if (ctx.chat.type === 'private') return
 
-  const currentRoom = game.rooms.get(ctx.chat.id)
-  const roomStatus = game.completeRegistration(ctx.chat.id)
+  const chatId = ctx.chat.id
+  const currentRoom = game.rooms.get(chatId)
+  const roomStatus = game.completeRegistration(chatId)
 
   if (
     roomStatus === 'room_not_exist' ||
@@ -46,7 +47,10 @@ const completeRegistration = async (ctx: CommandContext) => {
     return
   }
 
+  game.unregisterTimeoutEvent(chatId)
+
   let textMessage = ''
+  const messageId = currentRoom.registration.message_id
 
   switch (roomStatus) {
     case 'not_enough_participants':
@@ -61,19 +65,19 @@ const completeRegistration = async (ctx: CommandContext) => {
 
   try {
     await ctx.telegram.editMessageText(
-      ctx.chat.id,
-      currentRoom.registration.message_id,
+      chatId,
+      messageId,
       undefined,
       textMessage,
       { parse_mode: 'MarkdownV2' },
     )
-  } catch (e) {
+  } catch {
     await ctx.replyWithMarkdownV2(textMessage)
   }
 
   try {
-    await ctx.unpinChatMessage(currentRoom.registration.message_id)
-  } catch (error) {
+    await ctx.unpinChatMessage(messageId)
+  } catch {
     /* empty */
   }
 

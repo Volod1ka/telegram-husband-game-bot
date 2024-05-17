@@ -1,35 +1,71 @@
-import { BOT_ACTIONS, INLINE_KEYBOARD_ROLE, SCENES } from '@constants'
+import {
+  ACCEPT_HUSBAND_ROLE_TIMEOUT,
+  BOT_ACTIONS,
+  INLINE_KEYBOARD_ROLE,
+  SCENES,
+} from '@constants'
 import game from '@game/engine'
 import { t } from '@i18n'
-import type { Chat } from '@telegraf/types'
+import type { Chat, Message, User } from '@telegraf/types'
 import { Scenes } from 'telegraf'
 import type { ActionContext, BotContext } from '../context'
 
 // ------- [ enter ] ------- //
 
 const searchHusband = async (ctx: BotContext) => {
-  let chatId = ctx.chat!.id
+  if (!ctx.from) return ctx.scene.reset()
 
-  if (ctx.chat?.type === 'private') {
-    const currentRoom = game.getRoomOfUser(ctx.chat.id)
+  const currentRoom = game.getRoomOfUser(ctx.from.id)
 
-    if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
+  if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
 
-    chatId = currentRoom[0]
-  }
+  const [chatId] = currentRoom
+  const [participantId, { user }] = game.getRandomRequestHusbandRole(chatId)
 
-  const [userId] = game.getRandomRequestHusbandRole(chatId)
+  const { message_id } = await ctx.telegram.sendMessage(
+    participantId,
+    t('husband.search'),
+    {
+      parse_mode: 'MarkdownV2',
+      reply_markup: INLINE_KEYBOARD_ROLE.reply_markup,
+    },
+  )
+  const nextUserCtx = {
+    ...ctx,
+    from: user,
+    chat: { id: participantId, type: 'private' },
+  } as BotContext
 
-  await ctx.telegram.sendMessage(userId, t('husband.search'), {
-    parse_mode: 'MarkdownV2',
-    reply_markup: INLINE_KEYBOARD_ROLE.reply_markup,
-  })
+  game.registerTimeoutEvent(
+    chatId,
+    async () => onAFK(nextUserCtx, participantId, message_id),
+    ACCEPT_HUSBAND_ROLE_TIMEOUT,
+  )
 }
 
 // ------- [ actions ] ------- //
 
+const onAFK = async (
+  ctx: BotContext,
+  userId: User['id'],
+  messageId: Message['message_id'],
+) => {
+  await Promise.all([
+    ctx.telegram.editMessageText(
+      userId,
+      messageId,
+      undefined,
+      t('husband.deny_role'),
+      {
+        parse_mode: 'MarkdownV2',
+      },
+    ),
+    onPickHusbandRole(ctx, false),
+  ])
+}
+
 const sendMessageToParticipations = async (
-  ctx: ActionContext,
+  ctx: BotContext,
   chatId: Chat['id'],
 ) => {
   const { participants } = game.rooms.get(chatId)!
@@ -47,46 +83,45 @@ const sendMessageToParticipations = async (
   }
 }
 
-const completeHusbandSearch = async (
-  ctx: ActionContext,
-  chatId: Chat['id'],
-) => {
+const completeHusbandSearch = async (ctx: BotContext, chatId: Chat['id']) => {
   game.assignRandomNumberToMembers(chatId)
   game.sortMemberByNumber(chatId)
   await sendMessageToParticipations(ctx, chatId)
   game.completeHusbandSearch(chatId)
 
-  return ctx.scene.enter(SCENES.question)
+  await ctx.scene.enter(SCENES.question)
 }
 
-const onPickHusbandRole = async (ctx: ActionContext, accepted: boolean) => {
-  const currentRoom = game.getRoomOfUser(ctx.from.id)
+const onPickHusbandRole = async (ctx: BotContext, accepted: boolean) => {
+  const currentRoom = game.getRoomOfUser(ctx.from!.id)
 
   if (!currentRoom) {
     return
   }
 
-  const [chat_id] = currentRoom
-  const status = game.acceptHusbandRole(chat_id, ctx.from, accepted)
+  const [chatId] = currentRoom
+  const status = game.acceptHusbandRole(chatId, ctx.from!, accepted)
+
+  game.unregisterTimeoutEvent(chatId)
 
   switch (status) {
     case 'accept':
-      return completeHusbandSearch(ctx, currentRoom[0])
+      return completeHusbandSearch(ctx, chatId)
     case 'deny': {
-      const allCanceled = game.allСanceledHusbandRole(chat_id)
+      const allCanceled = game.allСanceledHusbandRole(chatId)
       if (!allCanceled) {
         return searchHusband(ctx)
       }
 
-      const [husband_id, husband] = game.getRandomRequestHusbandRole(chat_id)
+      const [husbandId, { user }] = game.getRandomRequestHusbandRole(chatId)
 
-      game.acceptHusbandRole(chat_id, husband.user, true)
+      game.acceptHusbandRole(chatId, user, true)
 
-      await ctx.telegram.sendMessage(husband_id, t('husband.random_role'), {
+      await ctx.telegram.sendMessage(husbandId, t('husband.random_role'), {
         parse_mode: 'MarkdownV2',
       })
 
-      return completeHusbandSearch(ctx, chat_id)
+      return completeHusbandSearch(ctx, chatId)
     }
   }
 }
@@ -95,14 +130,14 @@ export const onAcceptHusbandRole = async (ctx: ActionContext) => {
   await ctx.editMessageText(t('husband.accept_role'), {
     parse_mode: 'MarkdownV2',
   })
-  onPickHusbandRole(ctx, true)
+  return onPickHusbandRole(ctx, true)
 }
 
 export const onDenyHusbandRole = async (ctx: ActionContext) => {
   await ctx.editMessageText(t('husband.deny_role'), {
     parse_mode: 'MarkdownV2',
   })
-  onPickHusbandRole(ctx, false)
+  return onPickHusbandRole(ctx, false)
 }
 
 // ------- [ Scene ] ------- //
@@ -111,10 +146,7 @@ const husbandSearchScene = new Scenes.BaseScene<BotContext>(
   SCENES.search_husband,
 )
 
-husbandSearchScene.enter(async (ctx, next) => {
-  await searchHusband(ctx)
-  return next()
-})
+husbandSearchScene.enter(searchHusband)
 
 husbandSearchScene.action(BOT_ACTIONS.accept_husband_role, onAcceptHusbandRole)
 husbandSearchScene.action(BOT_ACTIONS.deny_husband_role, onDenyHusbandRole)

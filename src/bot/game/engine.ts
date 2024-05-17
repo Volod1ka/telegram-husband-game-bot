@@ -36,8 +36,8 @@ export class GameEngine {
     event.startDate = Date.now()
     event.timeoutMs = ms
     event.timeout = setTimeout(async () => {
-      await callback()
       this.unregisterTimeoutEvent(chatId)
+      await callback()
     }, ms)
     event.timeout.ref()
   }
@@ -51,6 +51,7 @@ export class GameEngine {
     event.startDate = 0
     event.timeoutMs = 0
     clearTimeout(event.timeout)
+    event.timeout = null
   }
 
   extendRegistrationTimeout(
