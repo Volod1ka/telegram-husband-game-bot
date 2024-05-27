@@ -26,9 +26,9 @@ export const TELEGRAM_MENTION = 'tg://user?id='
 export const EMPTY_ANSWER = ' – '
 
 export const DEFAULT_GAME_ROOM: GameRoom = {
-  answers: new Map([]),
+  answers: new Map(),
   numberOfSkips: ELIMINATION_SKIPS_COUNT,
-  participants: new Map([]),
+  participants: new Map(),
   registration: null,
   status: 'registration',
 } satisfies GameRoom // Represents a new game room

@@ -1,5 +1,6 @@
-import { REACTIONS } from '@constants'
+import { DEFAULT_GAME_ROOM, EMPTY_ROOM_EVENT, REACTIONS } from '@constants'
 import game from '@game/engine'
+import type { GameRoom, RoomEvent } from '@models/game'
 import type { Participant } from '@models/roles'
 import type { TelegramEmoji, User } from '@telegraf/types'
 import type { BotContext } from 'bot/context'
@@ -27,6 +28,16 @@ export const getRandomEmoji = (): TelegramEmoji => {
 export const createParticipant = (user: User): Participant => {
   return { role: 'unknown', afk: false, request_husband: 'awaiting', user }
 }
+
+export const createNewGameRoom = (): GameRoom => ({
+  ...DEFAULT_GAME_ROOM,
+  answers: new Map(DEFAULT_GAME_ROOM.answers),
+  participants: new Map(DEFAULT_GAME_ROOM.participants),
+})
+
+export const createNewRoomEvent = (): RoomEvent => ({
+  ...EMPTY_ROOM_EVENT,
+})
 
 export const hasUnknownRole = ([, participant]: [User['id'], Participant]) =>
   participant.role === 'unknown' && participant.request_husband !== 'denied'

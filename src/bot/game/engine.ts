@@ -1,13 +1,10 @@
-import {
-  DEFAULT_GAME_ROOM,
-  EMPTY_ROOM_EVENT,
-  MAX_REGISTRATION_TIMEOUT,
-  MIN_PARTICIPANTS_COUNT,
-} from '@constants'
+import { MAX_REGISTRATION_TIMEOUT, MIN_PARTICIPANTS_COUNT } from '@constants'
 import type { GameRoom, GameStatus, RoomEvent } from '@models/game'
 import type { Participant } from '@models/roles'
 import type { Chat, MessageId, User } from '@telegraf/types'
 import {
+  createNewGameRoom,
+  createNewRoomEvent,
   createParticipant,
   filteringParticipantsInGame,
   hasHusbandRole,
@@ -105,10 +102,25 @@ export class GameEngine {
   createRoom(chatId: Chat['id']): boolean {
     if (this.rooms.has(chatId)) return false
 
-    this.events.set(chatId, EMPTY_ROOM_EVENT)
-    this.rooms.set(chatId, DEFAULT_GAME_ROOM)
+    this.events.set(chatId, createNewRoomEvent())
+    this.rooms.set(chatId, createNewGameRoom())
 
     return true
+  }
+
+  closeRoom(chatId: Chat['id'], force?: boolean): boolean {
+    const roomStatus = this.getRoomStatus(chatId)
+
+    const deleteEnabled =
+      force || roomStatus === 'registration' || roomStatus === 'finished'
+
+    if (deleteEnabled) {
+      this.unregisterTimeoutEvent(chatId)
+      this.rooms.delete(chatId)
+      this.events.delete(chatId)
+    }
+
+    return deleteEnabled
   }
 
   setMessageForRegistration(
@@ -127,21 +139,6 @@ export class GameEngine {
     } satisfies GameRoom
 
     return !!this.rooms.set(chatId, updatedRoom)
-  }
-
-  closeRoom(chatId: Chat['id'], force?: boolean): boolean {
-    const roomStatus = this.getRoomStatus(chatId)
-
-    const deleteEnabled =
-      force || roomStatus === 'registration' || roomStatus === 'finished'
-
-    if (deleteEnabled) {
-      this.unregisterTimeoutEvent(chatId)
-      this.rooms.delete(chatId)
-      this.events.delete(chatId)
-    }
-
-    return deleteEnabled
   }
 
   addParticipantToRoom(
