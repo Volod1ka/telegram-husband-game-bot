@@ -85,7 +85,7 @@ const sendMessageToParticipations = async (
 
 const completeHusbandSearch = async (ctx: BotContext, chatId: Chat['id']) => {
   game.assignRandomNumberToMembers(chatId)
-  game.sortMemberByNumber(chatId)
+  game.sortMembersByNumber(chatId)
   await sendMessageToParticipations(ctx, chatId)
   game.completeHusbandSearch(chatId)
 

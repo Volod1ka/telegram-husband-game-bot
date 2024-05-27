@@ -5,7 +5,7 @@ import {
 } from '@constants'
 import game from '@game/engine'
 import { t } from '@i18n'
-import type { Chat, ParseMode } from '@telegraf/types'
+import type { Chat } from '@telegraf/types'
 import { answerOfMembers } from '@tools/formatting'
 import { getRandomEmoji } from '@tools/utils'
 import { Scenes } from 'telegraf'
@@ -54,24 +54,23 @@ const onTimeoutEvent = async (ctx: BotContext, chatId: Chat['id']) => {
 // ------- [ text messages ] ------- //
 
 const completeAnswers = async (ctx: BotContext, chatId: Chat['id']) => {
-  const { answers, question } = game.rooms.get(chatId)!
+  const { answers, reply } = game.rooms.get(chatId)!
   const participants = game.getParticipantsInGame(chatId)
-
   const textMessage = answerOfMembers(participants, answers)
-  const extraProps = {
+
+  await ctx.telegram.sendMessage(chatId, textMessage, {
     reply_markup: INLINE_KEYBOARD_CHAT_WITH_BOT(ctx.botInfo.username)
       .reply_markup,
-    parse_mode: 'HTML' as ParseMode,
-    reply_parameters: {
-      message_id: question!.message_id,
-      chat_id: chatId,
-      allow_sending_without_reply: true,
-    },
-  }
+    parse_mode: 'HTML',
+    reply_parameters: reply
+      ? {
+          message_id: reply,
+          chat_id: chatId,
+          allow_sending_without_reply: true,
+        }
+      : undefined,
+  })
 
-  await ctx.telegram.sendMessage(chatId, textMessage, extraProps)
-
-  game.clearAnswers(chatId)
   game.completeMemberAnswers(chatId)
 
   await ctx.scene.enter(SCENES.elimination)

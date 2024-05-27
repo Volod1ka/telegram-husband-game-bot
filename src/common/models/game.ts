@@ -11,7 +11,8 @@ export type GameStatus =
   | 'elimination'
   | 'finished'
 
-export type Registration = Pick<MessageId, 'message_id'> & {
+export type Registration = {
+  // Pick<MessageId, 'message_id'> & {
   creator_id: User['id']
 }
 
@@ -19,18 +20,14 @@ export type Question = Pick<MessageId, 'message_id'> & {
   text: string
 }
 
-export type Answers = {
-  finished: boolean
-  list: Map<User['id'], string>
-}
-
 export type GameRoom = {
   registration: Registration | null
   status: GameStatus
-  question: Question | null
-  answers: Map<User['id'], string> // Answers
+  reply?: MessageId['message_id']
+  // question?: string
+  answers: Map<User['id'], string>
   numberOfSkips: number
-  eliminatedParticipant: User['id'] | null
+  eliminatedParticipant?: User['id'] // | null
   participants: Map<User['id'], Participant>
 }
 

@@ -12,17 +12,21 @@ import type { BotContext } from '../context'
 const eliminationScene = new Scenes.BaseScene<BotContext>(SCENES.elimination)
 
 eliminationScene.enter(async ctx => {
-  const currentRoom = game.getRoomOfUser(ctx.from!.id)
+  if (!ctx.from) return ctx.scene.reset()
 
-  if (!currentRoom) {
-    return
-  }
+  const currentRoom = game.getRoomOfUser(ctx.from.id)
 
-  const deletedRoom = game.closeRoom(currentRoom[0], true)
+  if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
+
+  await ctx.scene.reset()
+
+  const [roomId] = currentRoom
+  const deletedRoom = game.closeRoom(roomId, true)
 
   if (deletedRoom) {
-    await ctx.telegram.sendMessage(currentRoom[0], '[Тест] Гра завершена!')
-    await ctx.scene.reset()
+    await ctx.telegram.sendMessage(roomId, '[Тест] Гра завершена!')
+    // TODO: remove
+    // await ctx.scene.reset()
   }
 })
 

@@ -50,7 +50,7 @@ const completeRegistration = async (ctx: CommandContext) => {
   game.unregisterTimeoutEvent(chatId)
 
   let textMessage = ''
-  const messageId = currentRoom.registration.message_id
+  const messageId = currentRoom.reply
 
   switch (roomStatus) {
     case 'not_enough_participants':
@@ -115,7 +115,7 @@ const checkStartGameAvailability = async (
 const checkGameAvailability = async (
   ctx: CommandContext,
   next: NextContext,
-  action: 'start' | 'stop',
+  action: 'start_now' | 'stop',
 ) => {
   if (await deleteMessageAndCheckPrivate(ctx)) return
 
@@ -137,7 +137,7 @@ const checkGameAvailability = async (
     currentRoom.registration!.creator_id,
   )
 
-  const actionText = action === 'start' ? 'start_game_now' : 'stop_game'
+  const actionText = action === 'start_now' ? 'start_game_now' : 'stop_game'
   const textMessage = t(`${actionText}.not_creator_or_admin`, {
     ctx,
     creator: mentionWithMarkdownV2(creator),
@@ -152,7 +152,7 @@ const checkStartGameNowAvailability = async (
   ctx: CommandContext,
   next: NextContext,
 ) => {
-  return checkGameAvailability(ctx, next, 'start')
+  return checkGameAvailability(ctx, next, 'start_now')
 }
 
 const checkStopGameAvailability = async (
@@ -186,29 +186,27 @@ const onStartGameNow = async (ctx: CommandContext) => {
 
 const onStopGame = async (ctx: CommandContext) => {
   const chatId = ctx.chat.id
-  const { registration } = game.rooms.get(chatId)!
-
-  if (!game.closeRoom(chatId)) return
-
-  game.unregisterTimeoutEvent(chatId)
+  const { reply } = game.rooms.get(chatId)!
 
   try {
     await ctx.telegram.editMessageText(
       chatId,
-      registration!.message_id,
+      reply,
       undefined,
       t('stop_game.base', { ctx, user: mentionWithMarkdownV2(ctx.from) }),
       { parse_mode: 'MarkdownV2' },
     )
-  } catch (e) {
+  } catch {
     await ctx.replyWithMarkdownV2(t('stop_game.base', { ctx }))
   }
 
   try {
-    await ctx.unpinChatMessage(registration!.message_id)
-  } catch (error) {
+    await ctx.unpinChatMessage(reply)
+  } catch {
     /* empty */
   }
+
+  game.closeRoom(chatId)
 }
 
 const onExtendGame = async (ctx: CommandContext) => {
@@ -236,7 +234,7 @@ const onExtendGame = async (ctx: CommandContext) => {
   const timeout = setTimeout(() => {
     try {
       ctx.deleteMessage(message_id)
-    } catch (error) {
+    } catch {
       /* empty */
     }
 
@@ -250,7 +248,7 @@ const checkParticipationAvailability = async (
   ctx: ActionContext,
   next: NextContext,
 ) => {
-  if (ctx.chat?.type === 'private') return
+  if (!ctx.chat || ctx.chat?.type === 'private') return
 
   try {
     const chatWithBot = await ctx.telegram.getChat(ctx.from.id)
@@ -258,7 +256,7 @@ const checkParticipationAvailability = async (
     if (chatWithBot.type !== 'private') {
       throw new Error('Missing chat started by participation with bot')
     }
-  } catch (error) {
+  } catch {
     return ctx.answerCbQuery(t('start.no_chat'), { show_alert: true })
   }
 
@@ -281,7 +279,7 @@ const onParticipate = async (ctx: ActionContext) => {
       t('answer_cb.participate.participant_added', { ctx }),
       { parse_mode: 'MarkdownV2' },
     )
-  } catch (error) {
+  } catch {
     game.removeParticipantFromRoom(chatId, ctx.from)
 
     return ctx.answerCbQuery(t('answer_cb.participate.blocked_chat'), {

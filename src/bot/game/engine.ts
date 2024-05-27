@@ -4,7 +4,7 @@ import {
   MAX_REGISTRATION_TIMEOUT,
   MIN_PARTICIPANTS_COUNT,
 } from '@constants'
-import type { GameRoom, GameStatus, Question, RoomEvent } from '@models/game'
+import type { GameRoom, GameStatus, RoomEvent } from '@models/game'
 import type { Participant } from '@models/roles'
 import type { Chat, MessageId, User } from '@telegraf/types'
 import {
@@ -77,19 +77,17 @@ export class GameEngine {
       MAX_REGISTRATION_TIMEOUT,
     )
 
-    if (!event.dateExtended && difference < event.timeoutMs) {
-      if (event.timeout) clearTimeout(event.timeout)
+    if (event.dateExtended || difference >= event.timeoutMs) return 0
 
-      event.timeout = setInterval(async () => {
-        this.unregisterTimeoutEvent(chatId)
-        await callback()
-      }, remainsTime)
-      event.timeout.ref()
+    if (event.timeout) clearTimeout(event.timeout)
 
-      return remainsTime
-    }
+    event.timeout = setInterval(async () => {
+      this.unregisterTimeoutEvent(chatId)
+      await callback()
+    }, remainsTime)
+    event.timeout.ref()
 
-    return 0
+    return remainsTime
   }
 
   getRoomStatus(chatId: Chat['id']): GameStatus | null {
@@ -124,7 +122,8 @@ export class GameEngine {
 
     const updatedRoom = {
       ...currentRoom,
-      registration: { creator_id: creatorId, message_id: messageId },
+      reply: messageId,
+      registration: { creator_id: creatorId },
     } satisfies GameRoom
 
     return !!this.rooms.set(chatId, updatedRoom)
@@ -306,12 +305,15 @@ export class GameEngine {
     return this.isParticipantRole(userId, 'member')
   }
 
-  setQuestionByHasband(userId: User['id'], question: Question) {
+  setQuestionByHasband(
+    userId: User['id'],
+    message_id: MessageId['message_id'],
+  ) {
     const currentRoom = this.getRoomOfUser(userId)
 
     if (!currentRoom || currentRoom[1].status !== 'question') return
 
-    this.rooms.set(currentRoom[0], { ...currentRoom[1], question })
+    this.rooms.set(currentRoom[0], { ...currentRoom[1], reply: message_id })
   }
 
   completeHusbandQuestion(chatId: Chat['id']) {
@@ -338,6 +340,7 @@ export class GameEngine {
       }
     }
 
+    currentRoom.answers.clear()
     this.rooms.set(chatId, { ...currentRoom, status: 'elimination' })
   }
 
@@ -403,14 +406,6 @@ export class GameEngine {
     const participantsInGame = this.getParticipantsInGame(chatId)
 
     return currentRoom.answers.size === participantsInGame.length
-  }
-
-  clearAnswers(chatId: Chat['id']) {
-    const currentRoom = this.rooms.get(chatId)
-
-    if (!currentRoom) return
-
-    currentRoom.answers.clear()
   }
 }
 

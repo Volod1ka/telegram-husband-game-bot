@@ -53,10 +53,7 @@ const onSendQuestion = async (ctx: TextMessageContext) => {
     },
   )
 
-  game.setQuestionByHasband(userId, {
-    message_id,
-    text: ctx.message.text,
-  })
+  game.setQuestionByHasband(userId, message_id)
   game.completeHusbandQuestion(roomId)
 
   await ctx.scene.enter(SCENES.answers)
