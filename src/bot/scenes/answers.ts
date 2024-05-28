@@ -22,11 +22,11 @@ const requestForAnswers = async (ctx: BotContext) => {
   if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
 
   const [chatId] = currentRoom
-  const members = game.getParticipantsInGame(chatId)
+  const members = game.getMembersInGame(chatId)
   const husband = game.getHusbandInGame(chatId)
 
   for (const [memberId] of members) {
-    await ctx.telegram.sendMessage(memberId, t('member.answer'), {
+    await ctx.telegram.sendMessage(memberId, t('member.answer.base'), {
       parse_mode: 'MarkdownV2',
     })
   }
@@ -55,8 +55,16 @@ const onTimeoutEvent = async (ctx: BotContext, chatId: Chat['id']) => {
 
 const completeAnswers = async (ctx: BotContext, chatId: Chat['id']) => {
   const { answers, reply } = game.rooms.get(chatId)!
-  const participants = game.getParticipantsInGame(chatId)
-  const textMessage = answerOfMembers(participants, answers)
+  const members = game.getMembersInGame(chatId)
+  const textMessage = answerOfMembers(members, answers)
+
+  for (const [memberId, member] of members) {
+    if (!member.afk) continue
+
+    await ctx.telegram.sendMessage(memberId, t('member.answer.afk'), {
+      parse_mode: 'HTML',
+    })
+  }
 
   await ctx.telegram.sendMessage(chatId, textMessage, {
     reply_markup: INLINE_KEYBOARD_CHAT_WITH_BOT(ctx.botInfo.username)

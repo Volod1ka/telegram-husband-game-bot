@@ -25,8 +25,6 @@ eliminationScene.enter(async ctx => {
 
   if (deletedRoom) {
     await ctx.telegram.sendMessage(roomId, '[Тест] Гра завершена!')
-    // TODO: remove
-    // await ctx.scene.reset()
   }
 })
 

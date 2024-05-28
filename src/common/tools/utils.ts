@@ -60,7 +60,7 @@ export const hasHusbandRoleNotAFK = ([, participant]: [
   Participant,
 ]) => participant.role === 'husband' && !participant.afk
 
-export const filteringParticipantsInGame = ([, participant]: [
+export const filteringMembersInGame = ([, participant]: [
   User['id'],
   Participant,
 ]) => participant.role === 'member' && !participant.eliminated

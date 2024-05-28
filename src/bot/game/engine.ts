@@ -6,7 +6,7 @@ import {
   createNewGameRoom,
   createNewRoomEvent,
   createParticipant,
-  filteringParticipantsInGame,
+  filteringMembersInGame,
   hasHusbandRole,
   hasHusbandRoleNotAFK,
   hasUnknownRole,
@@ -356,14 +356,14 @@ export class GameEngine {
     return !!room.answers.set(userId, answer)
   }
 
-  getParticipantsInGame(chatId: Chat['id']) {
+  getMembersInGame(chatId: Chat['id']) {
     const currentRoom = this.rooms.get(chatId)
 
     if (!currentRoom) return []
 
     const participants = [...currentRoom.participants.entries()]
 
-    return participants.filter(filteringParticipantsInGame)
+    return participants.filter(filteringMembersInGame)
   }
 
   getHusbandInGame(chatId: Chat['id']) {
@@ -381,14 +381,14 @@ export class GameEngine {
 
     if (!currentRoom || currentRoom.status !== 'answers') return
 
-    const participantsInGame = this.getParticipantsInGame(chatId)
+    const membersInGame = this.getMembersInGame(chatId)
 
-    for (const [participantId, participant] of participantsInGame) {
-      const answer = currentRoom.answers.get(participantId)
+    for (const [memberId, member] of membersInGame) {
+      const answer = currentRoom.answers.get(memberId)
 
       if (!answer?.length) {
-        currentRoom.participants.set(participantId, {
-          ...participant,
+        currentRoom.participants.set(memberId, {
+          ...member,
           afk: true,
         })
       }
@@ -400,9 +400,9 @@ export class GameEngine {
 
     if (!currentRoom || currentRoom.status !== 'answers') return false
 
-    const participantsInGame = this.getParticipantsInGame(chatId)
+    const membersInGame = this.getMembersInGame(chatId)
 
-    return currentRoom.answers.size === participantsInGame.length
+    return currentRoom.answers.size === membersInGame.length
   }
 }
 
