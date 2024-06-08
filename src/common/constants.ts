@@ -17,6 +17,7 @@ export const MIN_PARTICIPANTS_COUNT = 2 // 4
 export const REGISTRATION_TIMEOUT = ms('20s') // ms('1m')
 export const MAX_REGISTRATION_TIMEOUT = ms('3m')
 export const EXTEND_REGISTRATION_TIMEOUT = ms('10s') // ms('30s')
+export const CLEAR_EXTEND_REGISTRATION_TIMEOUT = ms('7s')
 export const ACCEPT_HUSBAND_ROLE_TIMEOUT = ms('20s') // ms('1m')
 export const ANSWERS_TIMEOUT = ms('20s') // ms('5m')
 export const ELIMINATION_TIMEOUT = ms('20s') // ms('1m')

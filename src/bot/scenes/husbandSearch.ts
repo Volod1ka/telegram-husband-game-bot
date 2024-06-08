@@ -26,7 +26,7 @@ const searchHusband = async (ctx: BotContext) => {
     participantId,
     t('husband.search'),
     {
-      parse_mode: 'MarkdownV2',
+      parse_mode: 'HTML',
       reply_markup: INLINE_KEYBOARD_ROLE.reply_markup,
     },
   )
@@ -55,7 +55,7 @@ const onTimeoutEvent = async (
       undefined,
       t('husband.afk_deny_role'),
       {
-        parse_mode: 'MarkdownV2',
+        parse_mode: 'HTML',
       },
     ),
     onPickHusbandRole(ctx, false),
@@ -75,7 +75,7 @@ const sendMessageToParticipations = async (
       participantId,
       t('member.welcome', { number: participant.number }),
       {
-        parse_mode: 'MarkdownV2',
+        parse_mode: 'HTML',
       },
     )
   }
@@ -116,9 +116,8 @@ const onPickHusbandRole = async (ctx: BotContext, accepted: boolean) => {
       game.acceptHusbandRole(chatId, user, true)
 
       await ctx.telegram.sendMessage(husbandId, t('husband.random_role'), {
-        parse_mode: 'MarkdownV2',
+        parse_mode: 'HTML',
       })
-
       return completeHusbandSearch(ctx, chatId)
     }
   }
@@ -128,14 +127,14 @@ const onPickHusbandRole = async (ctx: BotContext, accepted: boolean) => {
 
 export const onAcceptHusbandRole: ActionFn = async ctx => {
   await ctx.editMessageText(t('husband.accept_role'), {
-    parse_mode: 'MarkdownV2',
+    parse_mode: 'HTML',
   })
   return onPickHusbandRole(ctx, true)
 }
 
 export const onDenyHusbandRole: ActionFn = async ctx => {
   await ctx.editMessageText(t('husband.deny_role'), {
-    parse_mode: 'MarkdownV2',
+    parse_mode: 'HTML',
   })
   return onPickHusbandRole(ctx, false)
 }

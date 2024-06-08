@@ -21,7 +21,7 @@ const requestForQuestion = async (ctx: BotContext) => {
   if (!husband) return
 
   await ctx.telegram.sendMessage(husband[0], t('husband.question'), {
-    parse_mode: 'MarkdownV2',
+    parse_mode: 'HTML',
   })
 }
 

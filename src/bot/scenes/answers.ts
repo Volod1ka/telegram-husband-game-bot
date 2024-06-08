@@ -27,13 +27,13 @@ const requestForAnswers = async (ctx: BotContext) => {
 
   for (const [memberId] of members) {
     await ctx.telegram.sendMessage(memberId, t('member.answer.base'), {
-      parse_mode: 'MarkdownV2',
+      parse_mode: 'HTML',
     })
   }
 
   if (husband) {
     await ctx.telegram.sendMessage(husband[0], t('husband.ask_send_message'), {
-      parse_mode: 'MarkdownV2',
+      parse_mode: 'HTML',
     })
   }
 

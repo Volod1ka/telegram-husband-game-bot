@@ -14,10 +14,6 @@ export const shortNameParticipant = (user: User) => {
     : user.first_name
 }
 
-export const mentionWithMarkdownV2 = (user: User) => {
-  return `[${shortNameParticipant(user)}](${TELEGRAM_MENTION}${user.id})`
-}
-
 export const mentionWithHTML = (user: User) => {
   return `<a href="${TELEGRAM_MENTION}${user.id}">${shortNameParticipant(user)}</a>`
 }
@@ -26,7 +22,7 @@ export const mentionsOfParticipants = (
   participants: GameRoom['participants'],
 ) => {
   return [...participants.values()]
-    .map(participant => mentionWithMarkdownV2(participant.user))
+    .map(participant => mentionWithHTML(participant.user))
     .join(', ')
 }
 

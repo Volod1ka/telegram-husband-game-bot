@@ -1,6 +1,7 @@
 import {
   BOT_ACTIONS,
   BOT_COMMANDS,
+  CLEAR_EXTEND_REGISTRATION_TIMEOUT,
   EXTEND_REGISTRATION_TIMEOUT,
   INLINE_KEYBOARD_PARTICIPATE,
   MIN_PARTICIPANTS_COUNT,
@@ -10,13 +11,11 @@ import {
 } from '@constants'
 import game from '@game/engine'
 import { t } from '@i18n'
-import type { ParseMode } from '@telegraf/types'
 import {
-  mentionWithMarkdownV2,
+  mentionWithHTML,
   mentionsOfParticipants,
   remainsTime,
 } from '@tools/formatting'
-import ms from 'ms'
 import { Scenes } from 'telegraf'
 import type {
   ActionFn,
@@ -70,17 +69,13 @@ const completeRegistration: CommandFn = async ctx => {
       messageId,
       undefined,
       textMessage,
-      { parse_mode: 'MarkdownV2' },
+      { parse_mode: 'HTML' },
     )
   } catch {
-    await ctx.replyWithMarkdownV2(textMessage)
+    await ctx.replyWithHTML(textMessage)
   }
 
-  try {
-    await ctx.unpinChatMessage(messageId)
-  } catch {
-    /* empty */
-  }
+  await ctx.unpinChatMessage(messageId).catch()
 
   if (roomStatus === 'next_status') {
     await ctx.scene.enter(SCENES.search_husband)
@@ -92,18 +87,17 @@ const checkStartGameAvailability: CommandFn = async (ctx, next) => {
 
   if (!game.createRoom(ctx.chat.id)) {
     const { registration } = game.rooms.get(ctx.chat.id)!
-
     const { user: creator } = await ctx.telegram.getChatMember(
       ctx.chat.id,
       registration!.creatorId,
     )
     const textMessage = t('start_game.room_is_created', {
       ctx,
-      creator: mentionWithMarkdownV2(creator),
+      creator: mentionWithHTML(creator),
     })
 
     return ctx.telegram.sendMessage(ctx.from.id, textMessage, {
-      parse_mode: 'MarkdownV2',
+      parse_mode: 'HTML',
     })
   }
 
@@ -138,11 +132,11 @@ const checkGameAvailability = async (
   const actionText = action === 'start_now' ? 'start_game_now' : 'stop_game'
   const textMessage = t(`${actionText}.not_creator_or_admin`, {
     ctx,
-    creator: mentionWithMarkdownV2(creator),
+    creator: mentionWithHTML(creator),
   })
 
   return ctx.telegram.sendMessage(ctx.from.id, textMessage, {
-    parse_mode: 'MarkdownV2',
+    parse_mode: 'HTML',
   })
 }
 
@@ -155,7 +149,7 @@ const checkStopGameAvailability: CommandFn = async (ctx, next) => {
 }
 
 const onStartGame: CommandFn = async (ctx, next) => {
-  const { message_id } = await ctx.replyWithMarkdownV2(
+  const { message_id } = await ctx.replyWithHTML(
     t('start_game.base', { ctx }),
     INLINE_KEYBOARD_PARTICIPATE,
   )
@@ -181,24 +175,24 @@ const onStartGameNow: CommandFn = async (ctx, next) => {
 const onStopGame: CommandFn = async ctx => {
   const chatId = ctx.chat.id
   const { replyId } = game.rooms.get(chatId)!
+  const textMessage = t('stop_game.base', {
+    ctx,
+    user: mentionWithHTML(ctx.from),
+  })
 
   try {
     await ctx.telegram.editMessageText(
       chatId,
       replyId,
       undefined,
-      t('stop_game.base', { ctx, user: mentionWithMarkdownV2(ctx.from) }),
-      { parse_mode: 'MarkdownV2' },
+      textMessage,
+      { parse_mode: 'HTML' },
     )
   } catch {
-    await ctx.replyWithMarkdownV2(t('stop_game.base', { ctx }))
+    await ctx.replyWithHTML(textMessage)
   }
 
-  try {
-    await ctx.unpinChatMessage(replyId)
-  } catch {
-    /* empty */
-  }
+  await ctx.unpinChatMessage(replyId).catch()
 
   game.closeRoom(chatId)
 }
@@ -220,7 +214,7 @@ const onExtendGame: CommandFn = async (ctx, next) => {
 
   if (remains <= 0) return
 
-  const { message_id } = await ctx.replyWithMarkdownV2(
+  const { message_id } = await ctx.replyWithHTML(
     t('extend_game.base', {
       extend: remainsTime(EXTEND_REGISTRATION_TIMEOUT),
       remains: remainsTime(remains),
@@ -228,14 +222,9 @@ const onExtendGame: CommandFn = async (ctx, next) => {
   )
 
   const timeout = setTimeout(() => {
-    try {
-      ctx.deleteMessage(message_id)
-    } catch {
-      /* empty */
-    }
-
+    ctx.deleteMessage(message_id).catch()
     clearTimeout(timeout)
-  }, ms('7s'))
+  }, CLEAR_EXTEND_REGISTRATION_TIMEOUT)
 }
 
 // ------- [ action ] ------- //
@@ -270,7 +259,7 @@ const onParticipate: ActionFn = async ctx => {
     await ctx.telegram.sendMessage(
       ctx.from.id,
       t('answer_cb.participate.participant_added', { ctx }),
-      { parse_mode: 'MarkdownV2' },
+      { parse_mode: 'HTML' },
     )
   } catch {
     game.removeParticipantFromRoom(chatId, ctx.from)
@@ -287,7 +276,7 @@ const onParticipate: ActionFn = async ctx => {
   })
 
   await ctx.editMessageText(textMessage, {
-    parse_mode: 'MarkdownV2' as ParseMode,
+    parse_mode: 'HTML',
     reply_markup: INLINE_KEYBOARD_PARTICIPATE.reply_markup,
   })
 }

@@ -1,6 +1,7 @@
 import { INLINE_KEYBOARD_INVITE_CHAT } from '@constants'
 import game from '@game/engine'
 import { t } from '@i18n'
+import { mentionWithHTML } from '@tools/formatting'
 import { getRandomEmoji } from '@tools/utils'
 import { Composer } from 'telegraf'
 import type { BotContext } from '../context'
@@ -14,23 +15,27 @@ composer.start(async (ctx, next) => {
     return ctx.react('🌚')
   }
 
-  await ctx.replyWithMarkdownV2(
-    t('start.welcome', { ctx }),
-    INLINE_KEYBOARD_INVITE_CHAT(ctx.botInfo.username),
-  )
-  await ctx.react(getRandomEmoji())
+  await Promise.all([
+    ctx.replyWithHTML(
+      t('start.welcome', { ctx, user: mentionWithHTML(ctx.from) }),
+      INLINE_KEYBOARD_INVITE_CHAT(ctx.botInfo.username),
+    ),
+    ctx.react(getRandomEmoji()),
+  ])
 })
 
 // TODO: fill data
 composer.help(async ctx => {
   if (ctx.chat.type === 'private') {
-    return ctx.replyWithMarkdownV2(t('help.main'))
+    return ctx.replyWithHTML(t('help.main'))
   }
 
-  await ctx.deleteMessage()
-  await ctx.telegram.sendMessage(ctx.from.id, t('help.main'), {
-    parse_mode: 'MarkdownV2',
-  })
+  await Promise.all([
+    ctx.deleteMessage(),
+    ctx.telegram.sendMessage(ctx.from.id, t('help.main'), {
+      parse_mode: 'HTML',
+    }),
+  ])
 })
 
 export default composer
