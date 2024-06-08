@@ -13,7 +13,7 @@ export type GameStatus =
 
 export type Registration = {
   // Pick<MessageId, 'message_id'> & {
-  creator_id: User['id']
+  creatorId: User['id']
 }
 
 export type Question = Pick<MessageId, 'message_id'> & {
@@ -23,11 +23,11 @@ export type Question = Pick<MessageId, 'message_id'> & {
 export type GameRoom = {
   registration: Registration | null
   status: GameStatus
-  reply?: MessageId['message_id']
+  replyId?: MessageId['message_id']
   // question?: string
   answers: Map<User['id'], string>
   numberOfSkips: number
-  eliminatedParticipant?: User['id'] // | null
+  eliminatedParticipantId?: User['id'] // | null
   participants: Map<User['id'], Participant>
 }
 

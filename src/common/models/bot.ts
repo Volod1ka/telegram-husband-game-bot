@@ -6,7 +6,11 @@ export type CommandTrigger =
   | 'stop_game'
   | 'extend_game'
   | 'help'
-export type ActionTrigger = 'participate' | HusbandRoleAction
+
+export type ActionTrigger =
+  | 'participate'
+  | HusbandRoleAction
+  | 'skip_elimination'
 
 export type BotCommand = {
   command: CommandTrigger

@@ -10,9 +10,9 @@ import { answerOfMembers } from '@tools/formatting'
 import { getRandomEmoji } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import { message } from 'telegraf/filters'
-import type { BotContext, NextContext, TextMessageContext } from '../context'
+import type { BotContext, GuardTextMessageFn, TextMessageFn } from '../context'
 
-// ------- [ enter ] ------- //
+// ------- [ bot context ] ------- //
 
 const requestForAnswers = async (ctx: BotContext) => {
   if (!ctx.from) return ctx.scene.reset()
@@ -44,17 +44,15 @@ const requestForAnswers = async (ctx: BotContext) => {
   )
 }
 
-// ------- [ actions ] ------- //
-
 const onTimeoutEvent = async (ctx: BotContext, chatId: Chat['id']) => {
   game.setAFKMembersInAnswers(chatId)
   await completeAnswers(ctx, chatId)
 }
 
-// ------- [ text messages ] ------- //
-
 const completeAnswers = async (ctx: BotContext, chatId: Chat['id']) => {
-  const { answers, reply } = game.rooms.get(chatId)!
+  game.unregisterTimeoutEvent(chatId)
+
+  const { answers, replyId } = game.rooms.get(chatId)!
   const members = game.getMembersInGame(chatId)
   const textMessage = answerOfMembers(members, answers)
 
@@ -66,37 +64,29 @@ const completeAnswers = async (ctx: BotContext, chatId: Chat['id']) => {
     })
   }
 
-  await ctx.telegram.sendMessage(chatId, textMessage, {
+  const { message_id } = await ctx.telegram.sendMessage(chatId, textMessage, {
     reply_markup: INLINE_KEYBOARD_CHAT_WITH_BOT(ctx.botInfo.username)
       .reply_markup,
     parse_mode: 'HTML',
-    reply_parameters: reply
-      ? {
-          message_id: reply,
-          chat_id: chatId,
-          allow_sending_without_reply: true,
-        }
+    reply_parameters: replyId
+      ? { message_id: replyId, allow_sending_without_reply: true }
       : undefined,
   })
 
-  game.completeMemberAnswers(chatId)
+  game.completeMemberAnswers(chatId, message_id)
 
   await ctx.scene.enter(SCENES.elimination)
 }
 
-const checkSendTextMessageAvailability = async (
-  ctx: TextMessageContext,
-  next: NextContext,
-) => {
+// ------- [ text message ] ------- //
+
+const checkSendTextMessageAvailability: TextMessageFn = async (ctx, next) => {
   if (ctx.chat.type !== 'private') return
 
   return next()
 }
 
-const onSendMessageByHusband = async (
-  ctx: TextMessageContext,
-  next: NextContext,
-) => {
+const onSendMessageByHusband: TextMessageFn = async (ctx, next) => {
   const {
     text,
     from: { id: userId },
@@ -122,7 +112,7 @@ const onSendMessageByHusband = async (
   return next()
 }
 
-const onSendAnswer = async (ctx: TextMessageContext) => {
+const onSendAnswer: TextMessageFn = async ctx => {
   const {
     text,
     from: { id: userId },
@@ -141,17 +131,17 @@ const onSendAnswer = async (ctx: TextMessageContext) => {
   }
 }
 
-// ------- [ Scene ] ------- //
+// ------- [ scene ] ------- //
 
 const answersScene = new Scenes.BaseScene<BotContext>(SCENES.answers)
 
 answersScene.enter(requestForAnswers)
 
-answersScene.on(
+answersScene.on<GuardTextMessageFn>(
   message('text'),
-  async (ctx, next) => checkSendTextMessageAvailability(ctx, next),
-  async (ctx, next) => onSendMessageByHusband(ctx, next),
-  async ctx => onSendAnswer(ctx),
+  checkSendTextMessageAvailability,
+  onSendMessageByHusband,
+  onSendAnswer,
 )
 
 export default answersScene

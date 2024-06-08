@@ -4,9 +4,9 @@ import { t } from '@i18n'
 import { getRandomEmoji } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import { message } from 'telegraf/filters'
-import type { BotContext, NextContext, TextMessageContext } from '../context'
+import type { BotContext, GuardTextMessageFn, TextMessageFn } from '../context'
 
-// ------- [ enter ] ------- //
+// ------- [ bot context ] ------- //
 
 const requestForQuestion = async (ctx: BotContext) => {
   if (!ctx.from) return ctx.scene.reset()
@@ -16,7 +16,7 @@ const requestForQuestion = async (ctx: BotContext) => {
   if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
 
   const [chatId] = currentRoom
-  const husband = game.getHusbandInRoom(chatId)
+  const husband = game.getHusbandInGame(chatId)
 
   if (!husband) return
 
@@ -25,12 +25,9 @@ const requestForQuestion = async (ctx: BotContext) => {
   })
 }
 
-// ------- [ text messages ] ------- //
+// ------- [ text message ] ------- //
 
-const checkSendQuestionAvailability = async (
-  ctx: TextMessageContext,
-  next: NextContext,
-) => {
+const checkSendQuestionAvailability: TextMessageFn = async (ctx, next) => {
   if (ctx.chat.type !== 'private') return
 
   if (!game.isHusbandRole(ctx.message.from.id)) return ctx.react('👨‍💻')
@@ -38,20 +35,19 @@ const checkSendQuestionAvailability = async (
   return next()
 }
 
-const onSendQuestion = async (ctx: TextMessageContext) => {
+const onSendQuestion: TextMessageFn = async ctx => {
   const userId = ctx.message.from.id
   const [roomId] = game.getRoomOfUser(userId)!
+  const textMessage = t('husband.send_question', { question: ctx.message.text })
 
-  await ctx.react(getRandomEmoji())
-  const { message_id } = await ctx.telegram.sendMessage(
-    roomId,
-    t('husband.send_question', { question: ctx.message.text }),
-    {
+  const [, { message_id }] = await Promise.all([
+    ctx.react(getRandomEmoji()),
+    ctx.telegram.sendMessage(roomId, textMessage, {
       parse_mode: 'HTML',
       reply_markup: INLINE_KEYBOARD_CHAT_WITH_BOT(ctx.botInfo.username)
         .reply_markup,
-    },
-  )
+    }),
+  ])
 
   game.setQuestionByHasband(userId, message_id)
   game.completeHusbandQuestion(roomId)
@@ -59,16 +55,16 @@ const onSendQuestion = async (ctx: TextMessageContext) => {
   await ctx.scene.enter(SCENES.answers)
 }
 
-// ------- [ Scene ] ------- //
+// ------- [ scene ] ------- //
 
 const questionScene = new Scenes.BaseScene<BotContext>(SCENES.question)
 
 questionScene.enter(requestForQuestion)
 
-questionScene.on(
+questionScene.on<GuardTextMessageFn>(
   message('text'),
-  async (ctx, next) => checkSendQuestionAvailability(ctx, next),
-  async ctx => onSendQuestion(ctx),
+  checkSendQuestionAvailability,
+  onSendQuestion,
 )
 
 export default questionScene

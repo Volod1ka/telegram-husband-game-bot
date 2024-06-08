@@ -2,7 +2,8 @@ import type { AddParticipantToRoomStatus } from '@game/types'
 import { t } from '@i18n'
 import type { ActionTrigger, BotCommand, CommandTrigger } from '@models/bot'
 import type { GameRoom, RoomEvent, ScenesName } from '@models/game'
-import type { TelegramEmoji } from '@telegraf/types'
+import type { Participant } from '@models/roles'
+import type { TelegramEmoji, User } from '@telegraf/types'
 import { remainsTime } from '@tools/formatting'
 import ms from 'ms'
 import { Markup } from 'telegraf'
@@ -13,11 +14,12 @@ export const ELIMINATION_SKIPS_COUNT = 1
 export const MIN_PARTICIPANTS_COUNT = 2 // 4
 
 // TODO: change props in finish state
-export const REGISTRATION_TIMEOUT = ms('15s') //ms('1m')
+export const REGISTRATION_TIMEOUT = ms('20s') // ms('1m')
 export const MAX_REGISTRATION_TIMEOUT = ms('3m')
 export const EXTEND_REGISTRATION_TIMEOUT = ms('10s') // ms('30s')
-export const ACCEPT_HUSBAND_ROLE_TIMEOUT = ms('10s') // ms('1m')
-export const ANSWERS_TIMEOUT = ms('10s') // ms('5m')
+export const ACCEPT_HUSBAND_ROLE_TIMEOUT = ms('20s') // ms('1m')
+export const ANSWERS_TIMEOUT = ms('20s') // ms('5m')
+export const ELIMINATION_TIMEOUT = ms('20s') // ms('1m')
 
 // ------- [ default data ] ------- //
 export const TELEGRAM_LINK = 'https://t.me/'
@@ -31,14 +33,14 @@ export const DEFAULT_GAME_ROOM: GameRoom = {
   participants: new Map(),
   registration: null,
   status: 'registration',
-} satisfies GameRoom // Represents a new game room
+} satisfies GameRoom
 
 export const EMPTY_ROOM_EVENT: RoomEvent = {
   dateExtended: true,
   startDate: 0,
   timeout: null,
   timeoutMs: 0,
-} satisfies RoomEvent // Represents an empty room event for handle
+} satisfies RoomEvent
 
 export const REACTIONS: TelegramEmoji[] = [
   '🍌',
@@ -62,6 +64,7 @@ export const REACTIONS: TelegramEmoji[] = [
   '💯',
   '⚡',
 ]
+
 // ------- [ scenes name ] ------- //
 
 export const SCENES: Record<ScenesName, ScenesName> = {
@@ -71,7 +74,7 @@ export const SCENES: Record<ScenesName, ScenesName> = {
   answers: 'answers',
   elimination: 'elimination',
   finished: 'finished',
-} // Represents available scenes
+}
 
 // ------- [ interactive ] ------- //
 
@@ -81,13 +84,14 @@ export const BOT_COMMANDS: Record<CommandTrigger, CommandTrigger> = {
   stop_game: 'stop_game',
   extend_game: 'extend_game',
   help: 'help',
-} // Represents available bot commands
+}
 
 export const BOT_ACTIONS: Record<ActionTrigger, ActionTrigger> = {
   participate: 'participate',
   accept_husband_role: 'accept_husband_role',
   deny_husband_role: 'deny_husband_role',
-} // Represents available bot actions
+  skip_elimination: 'skip_elimination',
+}
 
 export const BOT_COMMANDS_WITH_DESCRIPTION: BotCommand[] = [
   {
@@ -112,7 +116,7 @@ export const BOT_COMMANDS_WITH_DESCRIPTION: BotCommand[] = [
   },
 ] satisfies BotCommand[]
 
-// ------- [ callbacks ] ------- //
+// ------- [ callback ] ------- //
 
 export const PARTICIPATE_CALLBACK_ANSWERS: Record<
   AddParticipantToRoomStatus,
@@ -122,13 +126,13 @@ export const PARTICIPATE_CALLBACK_ANSWERS: Record<
   participant_added: t('answer_cb.participate.participant_added'),
   participant_in_game: t('answer_cb.participate.participant_in_game'),
   room_not_exist: t('answer_cb.participate.room_not_exist'),
-} // Represents callback answers for participant actions
+}
 
-// ------- [ inline keyboards ] ------- //
+// ------- [ inline keyboard ] ------- //
 
 export const INLINE_KEYBOARD_PARTICIPATE = Markup.inlineKeyboard([
   Markup.button.callback(t('button.participate'), BOT_ACTIONS.participate),
-]) // Represents an inline keyboard for participant action
+])
 
 export const INLINE_KEYBOARD_INVITE_CHAT = (bot_username: string) =>
   Markup.inlineKeyboard([
@@ -136,7 +140,7 @@ export const INLINE_KEYBOARD_INVITE_CHAT = (bot_username: string) =>
       t('button.invite_to_chat'),
       `${TELEGRAM_LINK}${bot_username}?startgroup=true`,
     ),
-  ]) // Represents an inline keyboard for invite a bot to groups
+  ])
 
 export const INLINE_KEYBOARD_ROLE = Markup.inlineKeyboard([
   [
@@ -151,4 +155,32 @@ export const INLINE_KEYBOARD_CHAT_WITH_BOT = (bot_username: string) =>
       t('button.go_to_chat'),
       `${TELEGRAM_LINK}${bot_username}`,
     ),
-  ]) // Represents an inline keyboard for navigate to the bot chat
+  ])
+
+export const INLINE_KEYBOARD_ELIMINATION = (
+  members: [User['id'], Participant][],
+  canSkip: boolean,
+) => {
+  const replyMarkup = []
+
+  for (const [memberId, member] of members) {
+    if (member.role !== 'member') continue
+
+    replyMarkup.push(
+      Markup.button.callback(
+        t('button.participant', { number: member.number }),
+        `${memberId}`,
+      ),
+    )
+  }
+
+  replyMarkup.push(
+    Markup.button.callback(
+      t('button.skip'),
+      BOT_ACTIONS.skip_elimination,
+      !canSkip,
+    ),
+  )
+
+  return Markup.inlineKeyboard(replyMarkup, { columns: 1 })
+}

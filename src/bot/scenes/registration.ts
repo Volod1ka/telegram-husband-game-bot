@@ -19,20 +19,21 @@ import {
 import ms from 'ms'
 import { Scenes } from 'telegraf'
 import type {
-  ActionContext,
+  ActionFn,
   BotContext,
   CommandContext,
+  CommandFn,
   NextContext,
 } from '../context'
 
-// ------- [ commands ] ------- //
+// ------- [ command ] ------- //
 
-const deleteMessageAndCheckPrivate = async (ctx: CommandContext) => {
+const deleteMessageAndCheckPrivate: CommandFn = async ctx => {
   await ctx.deleteMessage()
   return ctx.chat.type === 'private'
 }
 
-const completeRegistration = async (ctx: CommandContext) => {
+const completeRegistration: CommandFn = async ctx => {
   if (ctx.chat.type === 'private') return
 
   const chatId = ctx.chat.id
@@ -50,7 +51,7 @@ const completeRegistration = async (ctx: CommandContext) => {
   game.unregisterTimeoutEvent(chatId)
 
   let textMessage = ''
-  const messageId = currentRoom.reply
+  const messageId = currentRoom.replyId
 
   switch (roomStatus) {
     case 'not_enough_participants':
@@ -86,18 +87,15 @@ const completeRegistration = async (ctx: CommandContext) => {
   }
 }
 
-const checkStartGameAvailability = async (
-  ctx: CommandContext,
-  next: NextContext,
-) => {
-  if (await deleteMessageAndCheckPrivate(ctx)) return
+const checkStartGameAvailability: CommandFn = async (ctx, next) => {
+  if (await deleteMessageAndCheckPrivate(ctx, next)) return
 
   if (!game.createRoom(ctx.chat.id)) {
     const { registration } = game.rooms.get(ctx.chat.id)!
 
     const { user: creator } = await ctx.telegram.getChatMember(
       ctx.chat.id,
-      registration!.creator_id,
+      registration!.creatorId,
     )
     const textMessage = t('start_game.room_is_created', {
       ctx,
@@ -117,7 +115,7 @@ const checkGameAvailability = async (
   next: NextContext,
   action: 'start_now' | 'stop',
 ) => {
-  if (await deleteMessageAndCheckPrivate(ctx)) return
+  if (await deleteMessageAndCheckPrivate(ctx, next)) return
 
   const currentRoom = game.rooms.get(ctx.chat.id)
 
@@ -128,13 +126,13 @@ const checkGameAvailability = async (
     ({ user: { id: user_id } }) => user_id === ctx.from.id,
   )
 
-  if (currentRoom.registration?.creator_id === ctx.from.id || isAdmin) {
+  if (currentRoom.registration?.creatorId === ctx.from.id || isAdmin) {
     return next()
   }
 
   const { user: creator } = await ctx.telegram.getChatMember(
     ctx.chat.id,
-    currentRoom.registration!.creator_id,
+    currentRoom.registration!.creatorId,
   )
 
   const actionText = action === 'start_now' ? 'start_game_now' : 'stop_game'
@@ -148,21 +146,15 @@ const checkGameAvailability = async (
   })
 }
 
-const checkStartGameNowAvailability = async (
-  ctx: CommandContext,
-  next: NextContext,
-) => {
+const checkStartGameNowAvailability: CommandFn = async (ctx, next) => {
   return checkGameAvailability(ctx, next, 'start_now')
 }
 
-const checkStopGameAvailability = async (
-  ctx: CommandContext,
-  next: NextContext,
-) => {
+const checkStopGameAvailability: CommandFn = async (ctx, next) => {
   return checkGameAvailability(ctx, next, 'stop')
 }
 
-const onStartGame = async (ctx: CommandContext) => {
+const onStartGame: CommandFn = async (ctx, next) => {
   const { message_id } = await ctx.replyWithMarkdownV2(
     t('start_game.base', { ctx }),
     INLINE_KEYBOARD_PARTICIPATE,
@@ -174,24 +166,26 @@ const onStartGame = async (ctx: CommandContext) => {
   if (game.setMessageForRegistration(ctx.chat.id, ctx.from, message_id)) {
     game.registerTimeoutEvent(
       ctx.chat.id,
-      async () => await completeRegistration(ctx),
+      async () => {
+        await completeRegistration(ctx, next)
+      },
       REGISTRATION_TIMEOUT,
     )
   }
 }
 
-const onStartGameNow = async (ctx: CommandContext) => {
-  return completeRegistration(ctx)
+const onStartGameNow: CommandFn = async (ctx, next) => {
+  return completeRegistration(ctx, next)
 }
 
-const onStopGame = async (ctx: CommandContext) => {
+const onStopGame: CommandFn = async ctx => {
   const chatId = ctx.chat.id
-  const { reply } = game.rooms.get(chatId)!
+  const { replyId } = game.rooms.get(chatId)!
 
   try {
     await ctx.telegram.editMessageText(
       chatId,
-      reply,
+      replyId,
       undefined,
       t('stop_game.base', { ctx, user: mentionWithMarkdownV2(ctx.from) }),
       { parse_mode: 'MarkdownV2' },
@@ -201,7 +195,7 @@ const onStopGame = async (ctx: CommandContext) => {
   }
 
   try {
-    await ctx.unpinChatMessage(reply)
+    await ctx.unpinChatMessage(replyId)
   } catch {
     /* empty */
   }
@@ -209,8 +203,8 @@ const onStopGame = async (ctx: CommandContext) => {
   game.closeRoom(chatId)
 }
 
-const onExtendGame = async (ctx: CommandContext) => {
-  if (await deleteMessageAndCheckPrivate(ctx)) return
+const onExtendGame: CommandFn = async (ctx, next) => {
+  if (await deleteMessageAndCheckPrivate(ctx, next)) return
 
   const roomStatus = game.getRoomStatus(ctx.chat.id)
 
@@ -218,7 +212,9 @@ const onExtendGame = async (ctx: CommandContext) => {
 
   const remains = game.extendRegistrationTimeout(
     ctx.chat.id,
-    async () => await completeRegistration(ctx),
+    async () => {
+      await completeRegistration(ctx, next)
+    },
     EXTEND_REGISTRATION_TIMEOUT,
   )
 
@@ -242,12 +238,9 @@ const onExtendGame = async (ctx: CommandContext) => {
   }, ms('7s'))
 }
 
-// ------- [ actions ] ------- //
+// ------- [ action ] ------- //
 
-const checkParticipationAvailability = async (
-  ctx: ActionContext,
-  next: NextContext,
-) => {
+const checkParticipationAvailability: ActionFn = async (ctx, next) => {
   if (!ctx.chat || ctx.chat?.type === 'private') return
 
   try {
@@ -263,7 +256,7 @@ const checkParticipationAvailability = async (
   return next()
 }
 
-const onParticipate = async (ctx: ActionContext) => {
+const onParticipate: ActionFn = async ctx => {
   const chatId = ctx.chat!.id
   const roomStatus = game.addParticipantToRoom(chatId, ctx.from)
 
@@ -292,15 +285,14 @@ const onParticipate = async (ctx: ActionContext) => {
     users: mentionsOfParticipants(currentRoom.participants),
     count: currentRoom.participants.size,
   })
-  const extraProps = {
+
+  await ctx.editMessageText(textMessage, {
     parse_mode: 'MarkdownV2' as ParseMode,
     reply_markup: INLINE_KEYBOARD_PARTICIPATE.reply_markup,
-  }
-
-  await ctx.editMessageText(textMessage, extraProps)
+  })
 }
 
-// ------- [ Scene ] ------- //
+// ------- [ scene ] ------- //
 
 const registrationScene = new Scenes.BaseScene<BotContext>(SCENES.registration)
 

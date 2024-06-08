@@ -8,9 +8,9 @@ import game from '@game/engine'
 import { t } from '@i18n'
 import type { Chat, Message, User } from '@telegraf/types'
 import { Scenes } from 'telegraf'
-import type { ActionContext, BotContext } from '../context'
+import type { ActionFn, BotContext } from '../context'
 
-// ------- [ enter ] ------- //
+// ------- [ bot context ] ------- //
 
 const searchHusband = async (ctx: BotContext) => {
   if (!ctx.from) return ctx.scene.reset()
@@ -42,8 +42,6 @@ const searchHusband = async (ctx: BotContext) => {
     ACCEPT_HUSBAND_ROLE_TIMEOUT,
   )
 }
-
-// ------- [ actions ] ------- //
 
 const onTimeoutEvent = async (
   ctx: BotContext,
@@ -126,21 +124,23 @@ const onPickHusbandRole = async (ctx: BotContext, accepted: boolean) => {
   }
 }
 
-export const onAcceptHusbandRole = async (ctx: ActionContext) => {
+// ------- [ action ] ------- //
+
+export const onAcceptHusbandRole: ActionFn = async ctx => {
   await ctx.editMessageText(t('husband.accept_role'), {
     parse_mode: 'MarkdownV2',
   })
   return onPickHusbandRole(ctx, true)
 }
 
-export const onDenyHusbandRole = async (ctx: ActionContext) => {
+export const onDenyHusbandRole: ActionFn = async ctx => {
   await ctx.editMessageText(t('husband.deny_role'), {
     parse_mode: 'MarkdownV2',
   })
   return onPickHusbandRole(ctx, false)
 }
 
-// ------- [ Scene ] ------- //
+// ------- [ scene ] ------- //
 
 const husbandSearchScene = new Scenes.BaseScene<BotContext>(
   SCENES.search_husband,

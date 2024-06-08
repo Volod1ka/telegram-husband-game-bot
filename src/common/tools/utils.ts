@@ -52,9 +52,6 @@ export const sortingMembersByNumber = (
   return prev.role === 'member' ? -1 : 1
 }
 
-export const hasHusbandRole = ([, participant]: [User['id'], Participant]) =>
-  participant.role === 'husband'
-
 export const hasHusbandRoleNotAFK = ([, participant]: [
   User['id'],
   Participant,

@@ -35,7 +35,12 @@ bot.use(session(sessionOptions))
 bot.use(mainComposer)
 bot.use(stage.middleware())
 // bot.use(async (ctx, next) => {
-//   await ctx.telegram.setMyCommands(BOT_COMMANDS_WITH_DESCRIPTION)
+//   await Promise.all([
+//     ctx.telegram.setMyCommands(BOT_COMMANDS_WITH_DESCRIPTION),
+//     // TODO: add admin rigths in const // ChatAdministratorRights
+//     ctx.telegram.setMyDefaultAdministratorRights({ rights: {} }),
+//   ])
+
 //   return await next()
 // })
 
