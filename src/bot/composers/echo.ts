@@ -17,7 +17,7 @@ const handleStartCommand: TextMessageFn = async (ctx, next) => {
 
   await Promise.all([
     ctx.replyWithHTML(
-      t('start.welcome', { ctx, user: mentionWithHTML(ctx.from) }),
+      t('start.welcome', { user: mentionWithHTML(ctx.from) }),
       INLINE_KEYBOARD_INVITE_CHAT(ctx.botInfo.username),
     ),
     ctx.react(getRandomEmoji()),
