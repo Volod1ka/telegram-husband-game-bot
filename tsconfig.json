@@ -28,6 +28,7 @@
       "@game/*": ["bot/game/*"],
       "@i18n": ["common/i18n/index"],
       "@models/*": ["common/models/*"],
+      "@stores": ["common/stores/index"],
       "@tools/*": ["common/tools/*"]
     }
   },

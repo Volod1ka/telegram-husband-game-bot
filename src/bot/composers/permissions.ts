@@ -1,13 +1,9 @@
 import { t } from '@i18n'
+import { store } from '@stores'
 import { hasAllPermissions, hasCommand } from '@tools/utils'
 import { Composer } from 'telegraf'
 import { message } from 'telegraf/filters'
 import type { BotContext, ContextFn } from '../context'
-
-// ------- [ variables ] ------- //
-
-// TODO: Reduce Global State
-let shownHasAdminRights = true
 
 // ------- [ context ] ------- //
 
@@ -20,12 +16,12 @@ const handlePermissions: ContextFn = async (ctx, next) => {
     const botInfo = await ctx.getChatMember(ctx.botInfo.id)
 
     if (botInfo.status !== 'administrator' || !hasAllPermissions(botInfo)) {
-      shownHasAdminRights = false
+      store.feedbackStore.setShownHasAdminRights(false)
       return ctx.replyWithHTML(t('warning.admin_rights.deny'))
     }
 
-    if (!shownHasAdminRights) {
-      shownHasAdminRights = true
+    if (!store.feedbackStore.shownHasAdminRights) {
+      store.feedbackStore.setShownHasAdminRights(true)
       await ctx.replyWithHTML(t('warning.admin_rights.accept'))
     }
   }

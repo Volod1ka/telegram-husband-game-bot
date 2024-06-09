@@ -2,18 +2,14 @@ import {
   BOT_COMMANDS_WITH_DESCRIPTION,
   DEFAULT_ADMINISTRATOR_RIGHTS,
 } from '@constants'
+import { store } from '@stores'
 import { Composer } from 'telegraf'
 import type { BotContext, ContextFn } from '../context'
-
-// ------- [ variables ] ------- //
-
-// TODO: Reduce Global State
-let settingsInitialized = false
 
 // ------- [ context ] ------- //
 
 const handleSetSettings: ContextFn = async (ctx, next) => {
-  if (!settingsInitialized) {
+  if (!store.feedbackStore.settingsInitialized) {
     await Promise.all([
       ctx.telegram.setMyCommands(BOT_COMMANDS_WITH_DESCRIPTION).catch(),
       ctx.telegram
@@ -23,7 +19,7 @@ const handleSetSettings: ContextFn = async (ctx, next) => {
         .catch(),
     ])
 
-    settingsInitialized = true
+    store.feedbackStore.settingsInitializedComplete()
   }
 
   return next()
