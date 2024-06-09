@@ -1,12 +1,14 @@
-import { EMPTY_ANSWER, TELEGRAM_MENTION } from '@constants'
+import {
+  EMPTY_ANSWER,
+  MAX_SHOWN_USER_NAME_LENGTH,
+  TELEGRAM_MENTION,
+} from '@constants'
 import { t } from '@i18n'
 import type { GameRoom } from '@models/game'
 import type { Participant } from '@models/roles'
 import type { Chat, User } from '@telegraf/types'
 import { formatDuration, intervalToDuration } from 'date-fns'
 import { uk } from 'date-fns/locale'
-
-export const MAX_SHOWN_USER_NAME_LENGTH = 20
 
 export const shortNameParticipant = (user: User) => {
   return user.first_name.length > MAX_SHOWN_USER_NAME_LENGTH

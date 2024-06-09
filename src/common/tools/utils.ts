@@ -1,9 +1,21 @@
-import { DEFAULT_GAME_ROOM, EMPTY_ROOM_EVENT, REACTIONS } from '@constants'
+import {
+  BOT_COMMANDS,
+  DEFAULT_ADMINISTRATOR_RIGHTS,
+  DEFAULT_GAME_ROOM,
+  EMPTY_ROOM_EVENT,
+  REACTIONS,
+} from '@constants'
 import game from '@game/engine'
 import type { GameRoom, RoomEvent } from '@models/game'
 import type { Participant } from '@models/roles'
-import type { TelegramEmoji, User } from '@telegraf/types'
+import type {
+  ChatMemberAdministrator,
+  TelegramEmoji,
+  User,
+} from '@telegraf/types'
 import type { BotContext } from 'bot/context'
+
+export type AdminRights = keyof typeof DEFAULT_ADMINISTRATOR_RIGHTS
 
 export const getSessionKey = (ctx: BotContext) => {
   const fromId = ctx.from?.id
@@ -61,3 +73,17 @@ export const filteringMembersInGame = ([, participant]: [
   User['id'],
   Participant,
 ]) => participant.role === 'member' && !participant.eliminated
+
+export const hasAllPermissions = (
+  botInfo: ChatMemberAdministrator,
+): boolean => {
+  return Object.entries(DEFAULT_ADMINISTRATOR_RIGHTS).every(
+    ([key, value]) => !value || botInfo[key as AdminRights],
+  )
+}
+
+export const hasCommand = (text: string): boolean => {
+  return !!Object.values(BOT_COMMANDS).find(command =>
+    text.includes(`/${command}`),
+  )
+}

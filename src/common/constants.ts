@@ -3,12 +3,18 @@ import { t } from '@i18n'
 import type { ActionTrigger, BotCommand, CommandTrigger } from '@models/bot'
 import type { GameRoom, RoomEvent, ScenesName } from '@models/game'
 import type { Participant } from '@models/roles'
-import type { TelegramEmoji, User } from '@telegraf/types'
+import type {
+  ChatAdministratorRights,
+  TelegramEmoji,
+  User,
+} from '@telegraf/types'
 import { remainsTime } from '@tools/formatting'
 import ms from 'ms'
 import { Markup } from 'telegraf'
 
 // ------- [ properties ] ------- //
+
+export const MAX_SHOWN_USER_NAME_LENGTH = 20
 
 export const ELIMINATION_SKIPS_COUNT = 1
 export const MIN_PARTICIPANTS_COUNT = 2 // 4
@@ -64,7 +70,19 @@ export const REACTIONS: TelegramEmoji[] = [
   '💘',
   '💯',
   '⚡',
-]
+] satisfies TelegramEmoji[]
+
+export const DEFAULT_ADMINISTRATOR_RIGHTS: ChatAdministratorRights = {
+  can_change_info: false,
+  can_delete_messages: true,
+  can_invite_users: false,
+  can_manage_chat: true,
+  can_manage_video_chats: false,
+  can_promote_members: false,
+  can_restrict_members: false,
+  is_anonymous: false,
+  can_pin_messages: true,
+} satisfies ChatAdministratorRights
 
 // ------- [ scenes name ] ------- //
 

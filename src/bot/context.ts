@@ -32,10 +32,11 @@ export type CallbackQueryDataContext = NarrowedContext<
   BotContext,
   CallbackQueryDataUpdate
 >
-export type NextContext = Parameters<MiddlewareFn<BotContext>>[1]
+export type NextContext = Parameters<ContextFn>[1]
 
 // ------- [ middleware function ] ------- //
 
+export type ContextFn = MiddlewareFn<BotContext>
 export type ActionFn = MiddlewareFn<ActionContext>
 export type CommandFn = MiddlewareFn<CommandContext>
 export type TextMessageFn = MiddlewareFn<TextMessageContext>

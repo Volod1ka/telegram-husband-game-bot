@@ -1,5 +1,15 @@
-export { default as answersScene } from './answers'
-export { default as eliminationScene } from './elimination'
-export { default as husbandSearchScene } from './husbandSearch'
-export { default as questionScene } from './question'
-export { default as registrationScene } from './registration'
+import answersScene from './answers'
+import eliminationScene from './elimination'
+import husbandSearchScene from './husbandSearch'
+import questionScene from './question'
+import registrationScene from './registration'
+
+const allScenes = [
+  registrationScene,
+  husbandSearchScene,
+  questionScene,
+  answersScene,
+  eliminationScene,
+] as const
+
+export { allScenes }
