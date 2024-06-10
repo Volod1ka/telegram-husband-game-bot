@@ -10,10 +10,18 @@ import type { Chat, User } from '@telegraf/types'
 import { formatDuration, intervalToDuration } from 'date-fns'
 import { uk } from 'date-fns/locale'
 
-export const shortNameParticipant = (user: User) => {
-  return user.first_name.length > MAX_SHOWN_USER_NAME_LENGTH
-    ? `${user.first_name.substring(0, MAX_SHOWN_USER_NAME_LENGTH)}…`
-    : user.first_name
+export const capitalizeFirstLetter = (text: string): string => {
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
+export const lowercaseFirstLetter = (text: string): string => {
+  return text.charAt(0).toLowerCase() + text.slice(1)
+}
+
+export const shortNameParticipant = ({ first_name }: User) => {
+  return first_name.length > MAX_SHOWN_USER_NAME_LENGTH
+    ? `${first_name.substring(0, MAX_SHOWN_USER_NAME_LENGTH)}…`
+    : first_name
 }
 
 export const mentionWithHTML = (user: User) => {
@@ -47,10 +55,13 @@ export const answerOfMembers = (
 
     const { afk, eliminated, number, user } = member
     const answer = answers.get(memberId)
+    const modifiedAnswer = answer?.length
+      ? capitalizeFirstLetter(answer)
+      : EMPTY_ANSWER
 
     lines += t('member.answers.line', {
       number,
-      answer: answer || EMPTY_ANSWER,
+      answer: modifiedAnswer,
     })
 
     if (afk && !eliminated) {
