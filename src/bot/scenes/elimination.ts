@@ -63,8 +63,10 @@ const handleAllAFKElimination = async (ctx: BotContext, chatId: Chat['id']) => {
   })
 
   game.completeElimination(chatId, true)
+  // TODO: replace to finish scene
   game.closeRoom(chatId)
 
+  // TODO: navigate to finish scene
   resetScene(ctx)
   await sendMessage(ctx, chatId, textMessage, replyId)
 }
@@ -85,8 +87,10 @@ const handleSingleWinnerElimination = async (
   })
 
   game.completeElimination(chatId, true)
+  // TODO: replace to finish scene
   game.closeRoom(chatId)
 
+  // TODO: navigate to finish scene
   resetScene(ctx)
   await sendMessage(ctx, chatId, textMessage, replyId)
 }
@@ -170,7 +174,9 @@ const handleElimination = async (
   game.completeElimination(chatId, gameFinished)
 
   if (gameFinished) {
+    // TODO: replace to finish scene
     game.closeRoom(chatId)
+    // TODO: navigate to finish scene
     resetScene(ctx)
   } else {
     await ctx.scene.enter(SCENES.question)

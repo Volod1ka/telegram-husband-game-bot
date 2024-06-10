@@ -26,6 +26,7 @@ export const EXTEND_REGISTRATION_TIMEOUT = ms('10s') // ms('30s')
 export const CLEAR_EXTEND_REGISTRATION_TIMEOUT = ms('7s')
 export const ACCEPT_HUSBAND_ROLE_TIMEOUT = ms('20s') // ms('1m')
 export const ANSWERS_TIMEOUT = ms('20s') // ms('5m')
+export const QUESTION_TIMEOUT = ms('20s') // ms('2m')
 export const ELIMINATION_TIMEOUT = ms('20s') // ms('1m')
 
 // ------- [ default data ] ------- //

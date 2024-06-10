@@ -17,39 +17,9 @@ import type {
   TextMessageFn,
 } from '../context'
 
-// ------- [ bot context ] ------- //
+// ------- [ utility functions ] ------- //
 
-const requestForAnswers: ContextFn = async ctx => {
-  if (!ctx.from) return ctx.scene.reset()
-
-  const currentRoom = game.getRoomOfUser(ctx.from.id)
-
-  if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
-
-  const [chatId] = currentRoom
-  const members = game.getMembersInGame(chatId)
-  const husband = game.getHusbandInGame(chatId)
-
-  for (const [memberId] of members) {
-    await ctx.telegram.sendMessage(memberId, t('member.answer.base'), {
-      parse_mode: 'HTML',
-    })
-  }
-
-  if (husband) {
-    await ctx.telegram.sendMessage(husband[0], t('husband.ask_send_message'), {
-      parse_mode: 'HTML',
-    })
-  }
-
-  game.registerTimeoutEvent(
-    chatId,
-    async () => onTimeoutEvent(ctx, chatId),
-    ANSWERS_TIMEOUT,
-  )
-}
-
-const onTimeoutEvent = async (ctx: BotContext, chatId: Chat['id']) => {
+const handleTimeoutEvent = async (ctx: BotContext, chatId: Chat['id']) => {
   game.setAFKMembersInAnswers(chatId)
   await completeAnswers(ctx, chatId)
 }
@@ -83,6 +53,38 @@ const completeAnswers = async (ctx: BotContext, chatId: Chat['id']) => {
   await ctx.scene.enter(SCENES.elimination)
 }
 
+// ------- [ bot context ] ------- //
+
+const requestForAnswers: ContextFn = async ctx => {
+  if (!ctx.from) return ctx.scene.reset()
+
+  const currentRoom = game.getRoomOfUser(ctx.from.id)
+
+  if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
+
+  const [chatId] = currentRoom
+  const members = game.getMembersInGame(chatId)
+  const husband = game.getHusbandInGame(chatId)
+
+  for (const [memberId] of members) {
+    await ctx.telegram.sendMessage(memberId, t('member.answer.base'), {
+      parse_mode: 'HTML',
+    })
+  }
+
+  if (husband) {
+    await ctx.telegram.sendMessage(husband[0], t('husband.ask_send_message'), {
+      parse_mode: 'HTML',
+    })
+  }
+
+  game.registerTimeoutEvent(
+    chatId,
+    async () => handleTimeoutEvent(ctx, chatId),
+    ANSWERS_TIMEOUT,
+  )
+}
+
 // ------- [ text message ] ------- //
 
 const checkSendTextMessageAvailability: TextMessageFn = async (ctx, next) => {
@@ -91,7 +93,7 @@ const checkSendTextMessageAvailability: TextMessageFn = async (ctx, next) => {
   return next()
 }
 
-const onSendMessageByHusband: TextMessageFn = async (ctx, next) => {
+const handleSendMessageByHusband: TextMessageFn = async (ctx, next) => {
   const {
     text,
     from: { id: userId },
@@ -117,7 +119,7 @@ const onSendMessageByHusband: TextMessageFn = async (ctx, next) => {
   return next()
 }
 
-const onSendAnswer: TextMessageFn = async ctx => {
+const handleSendAnswer: TextMessageFn = async ctx => {
   const {
     text,
     from: { id: userId },
@@ -145,8 +147,8 @@ answersScene.enter(requestForAnswers)
 answersScene.on<GuardTextMessageFn>(
   message('text'),
   checkSendTextMessageAvailability,
-  onSendMessageByHusband,
-  onSendAnswer,
+  handleSendMessageByHusband,
+  handleSendAnswer,
 )
 
 export default answersScene

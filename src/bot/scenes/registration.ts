@@ -151,7 +151,7 @@ const checkStopGameAvailability: CommandFn = async (ctx, next) => {
   return checkGameAvailability(ctx, next, 'stop')
 }
 
-const onStartGame: CommandFn = async (ctx, next) => {
+const handleStartGame: CommandFn = async (ctx, next) => {
   const { message_id } = await ctx.replyWithHTML(
     t('start_game.base', { ctx }),
     INLINE_KEYBOARD_PARTICIPATE,
@@ -171,11 +171,11 @@ const onStartGame: CommandFn = async (ctx, next) => {
   }
 }
 
-const onStartGameNow: CommandFn = async (ctx, next) => {
+const handleStartGameNow: CommandFn = async (ctx, next) => {
   return completeRegistration(ctx, next)
 }
 
-const onStopGame: CommandFn = async ctx => {
+const handleStopGame: CommandFn = async ctx => {
   const chatId = ctx.chat.id
   const { replyId } = game.rooms.get(chatId)!
   const textMessage = t('stop_game.base', {
@@ -200,7 +200,7 @@ const onStopGame: CommandFn = async ctx => {
   game.closeRoom(chatId)
 }
 
-const onExtendGame: CommandFn = async (ctx, next) => {
+const handleExtendGame: CommandFn = async (ctx, next) => {
   if (await deleteMessageAndCheckPrivate(ctx, next)) return
 
   const roomStatus = game.getRoomStatus(ctx.chat.id)
@@ -249,7 +249,7 @@ const checkParticipationAvailability: ActionFn = async (ctx, next) => {
   return next()
 }
 
-const onParticipate: ActionFn = async ctx => {
+const handleParticipate: ActionFn = async ctx => {
   const chatId = ctx.chat!.id
   const roomStatus = game.addParticipantToRoom(chatId, ctx.from)
 
@@ -293,24 +293,24 @@ const registrationScene = new Scenes.BaseScene<BotContext>(SCENES.registration)
 registrationScene.command(
   BOT_COMMANDS.start_game,
   checkStartGameAvailability,
-  onStartGame,
+  handleStartGame,
 )
 registrationScene.command(
   BOT_COMMANDS.start_game_now,
   checkStartGameNowAvailability,
-  onStartGameNow,
+  handleStartGameNow,
 )
 registrationScene.command(
   BOT_COMMANDS.stop_game,
   checkStopGameAvailability,
-  onStopGame,
+  handleStopGame,
 )
-registrationScene.command(BOT_COMMANDS.extend_game, onExtendGame)
+registrationScene.command(BOT_COMMANDS.extend_game, handleExtendGame)
 
 registrationScene.action(
   BOT_ACTIONS.participate,
   checkParticipationAvailability,
-  onParticipate,
+  handleParticipate,
 )
 
 export default registrationScene

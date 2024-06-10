@@ -302,12 +302,15 @@ export class GameEngine {
     this.rooms.set(currentRoom[0], { ...currentRoom[1], replyId: message_id })
   }
 
-  completeHusbandQuestion(chatId: Chat['id']) {
+  completeHusbandQuestion(chatId: Chat['id'], finished: boolean = false) {
     const currentRoom = this.rooms.get(chatId)
 
     if (currentRoom?.status !== 'question') return
 
-    this.rooms.set(chatId, { ...currentRoom, status: 'answers' })
+    this.rooms.set(chatId, {
+      ...currentRoom,
+      status: finished ? 'finished' : 'answers',
+    })
   }
 
   completeMemberAnswers(

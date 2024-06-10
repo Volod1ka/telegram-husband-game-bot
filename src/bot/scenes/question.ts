@@ -1,8 +1,13 @@
-import { INLINE_KEYBOARD_CHAT_WITH_BOT, SCENES } from '@constants'
+import {
+  INLINE_KEYBOARD_CHAT_WITH_BOT,
+  QUESTION_TIMEOUT,
+  SCENES,
+} from '@constants'
 import game from '@game/engine'
 import { t } from '@i18n'
+import type { Chat, User } from '@telegraf/types'
 import { capitalizeFirstLetter } from '@tools/formatting'
-import { getRandomEmoji } from '@tools/utils'
+import { getRandomEmoji, logHandleError } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import { message } from 'telegraf/filters'
 import type {
@@ -11,6 +16,27 @@ import type {
   GuardTextMessageFn,
   TextMessageFn,
 } from '../context'
+
+// ------- [ utility functions ] ------- //
+
+const handleTimeoutEvent = async (
+  ctx: BotContext,
+  chatId: Chat['id'],
+  husbandId: User['id'],
+) => {
+  await ctx.telegram
+    .sendMessage(husbandId, t('husband.question.afk'), {
+      parse_mode: 'HTML',
+    })
+    .catch(error => logHandleError(error, ctx))
+
+  game.completeHusbandQuestion(chatId, true)
+  // TODO: replace to finish scene
+  game.closeRoom(chatId)
+
+  // TODO: navigate to finish scene
+  ctx.scene.reset()
+}
 
 // ------- [ bot context ] ------- //
 
@@ -21,14 +47,20 @@ const requestForQuestion: ContextFn = async ctx => {
 
   if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
 
-  const [chatId] = currentRoom
-  const husband = game.getHusbandInGame(chatId)
+  const [roomId] = currentRoom
+  const husband = game.getHusbandInGame(roomId)
 
-  if (!husband) return
+  if (!husband) return ctx.scene.reset()
 
-  await ctx.telegram.sendMessage(husband[0], t('husband.question'), {
+  await ctx.telegram.sendMessage(husband[0], t('husband.question.base'), {
     parse_mode: 'HTML',
   })
+
+  game.registerTimeoutEvent(
+    roomId,
+    async () => handleTimeoutEvent(ctx, roomId, husband[0]),
+    QUESTION_TIMEOUT,
+  )
 }
 
 // ------- [ text message ] ------- //
@@ -41,12 +73,14 @@ const checkSendQuestionAvailability: TextMessageFn = async (ctx, next) => {
   return next()
 }
 
-const onSendQuestion: TextMessageFn = async ctx => {
+const handleSendQuestion: TextMessageFn = async ctx => {
   const userId = ctx.message.from.id
   const [roomId] = game.getRoomOfUser(userId)!
   const textMessage = t('husband.send_question', {
     question: capitalizeFirstLetter(ctx.message.text),
   })
+
+  game.unregisterTimeoutEvent(roomId)
 
   const [, { message_id }] = await Promise.all([
     ctx.react(getRandomEmoji()),
@@ -72,7 +106,7 @@ questionScene.enter(requestForQuestion)
 questionScene.on<GuardTextMessageFn>(
   message('text'),
   checkSendQuestionAvailability,
-  onSendQuestion,
+  handleSendQuestion,
 )
 
 export default questionScene

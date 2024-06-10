@@ -10,6 +10,27 @@ import type { Chat, Message, User } from '@telegraf/types'
 import { Scenes } from 'telegraf'
 import type { ActionFn, BotContext } from '../context'
 
+// ------- [ utility functions ] ------- //
+
+const handleTimeoutEvent = async (
+  ctx: BotContext,
+  userId: User['id'],
+  messageId: Message['message_id'],
+) => {
+  await Promise.all([
+    ctx.telegram.editMessageText(
+      userId,
+      messageId,
+      undefined,
+      t('husband.afk_deny_role'),
+      {
+        parse_mode: 'HTML',
+      },
+    ),
+    handlePickHusbandRole(ctx, false),
+  ])
+}
+
 // ------- [ bot context ] ------- //
 
 const searchHusband = async (ctx: BotContext) => {
@@ -38,28 +59,9 @@ const searchHusband = async (ctx: BotContext) => {
 
   game.registerTimeoutEvent(
     chatId,
-    async () => onTimeoutEvent(nextUserCtx, participantId, message_id),
+    async () => handleTimeoutEvent(nextUserCtx, participantId, message_id),
     ACCEPT_HUSBAND_ROLE_TIMEOUT,
   )
-}
-
-const onTimeoutEvent = async (
-  ctx: BotContext,
-  userId: User['id'],
-  messageId: Message['message_id'],
-) => {
-  await Promise.all([
-    ctx.telegram.editMessageText(
-      userId,
-      messageId,
-      undefined,
-      t('husband.afk_deny_role'),
-      {
-        parse_mode: 'HTML',
-      },
-    ),
-    onPickHusbandRole(ctx, false),
-  ])
 }
 
 const sendMessageToParticipations = async (
@@ -90,7 +92,7 @@ const completeHusbandSearch = async (ctx: BotContext, chatId: Chat['id']) => {
   await ctx.scene.enter(SCENES.question)
 }
 
-const onPickHusbandRole = async (ctx: BotContext, accepted: boolean) => {
+const handlePickHusbandRole = async (ctx: BotContext, accepted: boolean) => {
   const currentRoom = game.getRoomOfUser(ctx.from!.id)
 
   if (!currentRoom) {
@@ -125,18 +127,18 @@ const onPickHusbandRole = async (ctx: BotContext, accepted: boolean) => {
 
 // ------- [ action ] ------- //
 
-export const onAcceptHusbandRole: ActionFn = async ctx => {
+export const handleAcceptHusbandRole: ActionFn = async ctx => {
   await ctx.editMessageText(t('husband.accept_role'), {
     parse_mode: 'HTML',
   })
-  return onPickHusbandRole(ctx, true)
+  return handlePickHusbandRole(ctx, true)
 }
 
-export const onDenyHusbandRole: ActionFn = async ctx => {
+export const handleDenyHusbandRole: ActionFn = async ctx => {
   await ctx.editMessageText(t('husband.deny_role'), {
     parse_mode: 'HTML',
   })
-  return onPickHusbandRole(ctx, false)
+  return handlePickHusbandRole(ctx, false)
 }
 
 // ------- [ scene ] ------- //
@@ -147,7 +149,10 @@ const husbandSearchScene = new Scenes.BaseScene<BotContext>(
 
 husbandSearchScene.enter(searchHusband)
 
-husbandSearchScene.action(BOT_ACTIONS.accept_husband_role, onAcceptHusbandRole)
-husbandSearchScene.action(BOT_ACTIONS.deny_husband_role, onDenyHusbandRole)
+husbandSearchScene.action(
+  BOT_ACTIONS.accept_husband_role,
+  handleAcceptHusbandRole,
+)
+husbandSearchScene.action(BOT_ACTIONS.deny_husband_role, handleDenyHusbandRole)
 
 export default husbandSearchScene
