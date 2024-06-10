@@ -10,11 +10,16 @@ import { answerOfMembers } from '@tools/formatting'
 import { getRandomEmoji } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import { message } from 'telegraf/filters'
-import type { BotContext, GuardTextMessageFn, TextMessageFn } from '../context'
+import type {
+  BotContext,
+  ContextFn,
+  GuardTextMessageFn,
+  TextMessageFn,
+} from '../context'
 
 // ------- [ bot context ] ------- //
 
-const requestForAnswers = async (ctx: BotContext) => {
+const requestForAnswers: ContextFn = async ctx => {
   if (!ctx.from) return ctx.scene.reset()
 
   const currentRoom = game.getRoomOfUser(ctx.from.id)

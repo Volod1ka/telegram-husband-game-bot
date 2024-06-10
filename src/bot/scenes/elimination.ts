@@ -10,6 +10,7 @@ import type {
   BotContext,
   CallbackQueryDataContext,
   CallbackQueryDataFn,
+  ContextFn,
   GuardCallbackQueryDataFn,
 } from '../context'
 
@@ -33,7 +34,7 @@ const sendMessage = async (
 
 // ------- [ bot context ] ------- //
 
-const startElimination = async (ctx: BotContext) => {
+const startElimination: ContextFn = async ctx => {
   if (!ctx.from) return resetScene(ctx)
 
   const currentRoom = game.getRoomOfUser(ctx.from.id)
