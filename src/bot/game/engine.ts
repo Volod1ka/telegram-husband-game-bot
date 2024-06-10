@@ -18,12 +18,16 @@ import type {
 } from './types'
 
 export class GameEngine {
-  rooms: Map<Chat['id'], GameRoom>
-  private events: Map<Chat['id'], RoomEvent>
+  private _rooms: Map<Chat['id'], GameRoom>
+  private _events: Map<Chat['id'], RoomEvent>
 
   constructor() {
-    this.rooms = new Map()
-    this.events = new Map()
+    this._rooms = new Map()
+    this._events = new Map()
+  }
+
+  get allRooms() {
+    return this._rooms
   }
 
   registerTimeoutEvent(
@@ -31,7 +35,7 @@ export class GameEngine {
     callback: () => Promise<void>,
     ms: number,
   ) {
-    const event = this.events.get(chatId)
+    const event = this._events.get(chatId)
 
     if (!event || !event.dateExtended) return
 
@@ -46,7 +50,7 @@ export class GameEngine {
   }
 
   unregisterTimeoutEvent(chatId: Chat['id']) {
-    const event = this.events.get(chatId)
+    const event = this._events.get(chatId)
 
     if (!event?.timeout) return
 
@@ -62,7 +66,7 @@ export class GameEngine {
     callback: () => Promise<void>,
     extendMs: number,
   ): number {
-    const event = this.events.get(chatId)
+    const event = this._events.get(chatId)
 
     if (!event) return 0
 
@@ -87,22 +91,22 @@ export class GameEngine {
   }
 
   getRoomStatus(chatId: Chat['id']): GameStatus | null {
-    return this.rooms.get(chatId)?.status ?? null
+    return this._rooms.get(chatId)?.status ?? null
   }
 
   getRoomOfUser(userId: User['id']) {
-    if (!this.rooms.size) return null
+    if (!this._rooms.size) return null
 
-    const rooms = [...this.rooms.entries()]
+    const rooms = [...this._rooms.entries()]
 
     return rooms.find(([, room]) => room.participants.has(userId)) ?? null
   }
 
   createRoom(chatId: Chat['id']): boolean {
-    if (this.rooms.has(chatId)) return false
+    if (this._rooms.has(chatId)) return false
 
-    this.events.set(chatId, createNewRoomEvent())
-    this.rooms.set(chatId, createNewGameRoom())
+    this._events.set(chatId, createNewRoomEvent())
+    this._rooms.set(chatId, createNewGameRoom())
 
     return true
   }
@@ -115,8 +119,8 @@ export class GameEngine {
 
     if (deleteEnabled) {
       this.unregisterTimeoutEvent(chatId)
-      this.rooms.delete(chatId)
-      this.events.delete(chatId)
+      this._rooms.delete(chatId)
+      this._events.delete(chatId)
     }
 
     return deleteEnabled
@@ -127,7 +131,7 @@ export class GameEngine {
     { id: creatorId }: User,
     messageId: MessageId['message_id'],
   ): boolean {
-    const currentRoom = this.rooms.get(chatId)
+    const currentRoom = this._rooms.get(chatId)
 
     if (!currentRoom) return false
 
@@ -137,14 +141,14 @@ export class GameEngine {
       registration: { creatorId },
     } satisfies GameRoom
 
-    return !!this.rooms.set(chatId, updatedRoom)
+    return !!this._rooms.set(chatId, updatedRoom)
   }
 
   addParticipantToRoom(
     chatId: Chat['id'],
     user: User,
   ): AddParticipantToRoomStatus {
-    const currentRoom = this.rooms.get(chatId)
+    const currentRoom = this._rooms.get(chatId)
 
     if (!currentRoom) return 'room_not_exist'
 
@@ -158,7 +162,7 @@ export class GameEngine {
   }
 
   removeParticipantFromRoom(chatId: Chat['id'], { id: userId }: User) {
-    const currentRoom = this.rooms.get(chatId)
+    const currentRoom = this._rooms.get(chatId)
 
     if (!currentRoom) return
 
@@ -166,14 +170,18 @@ export class GameEngine {
   }
 
   completeRegistration(chatId: Chat['id']): FinishRegistrationStatus {
-    const currentRoom = this.rooms.get(chatId)
+    const currentRoom = this._rooms.get(chatId)
 
     if (!currentRoom) return 'room_not_exist'
 
     if (currentRoom?.status !== 'registration') return 'not_registration'
 
     if (currentRoom.participants.size >= MIN_PARTICIPANTS_COUNT) {
-      this.rooms.set(chatId, { ...currentRoom, status: 'search_husband' })
+      this._rooms.set(chatId, {
+        ...currentRoom,
+        startDate: Date.now(),
+        status: 'search_husband',
+      })
       return 'next_status'
     }
 
@@ -182,7 +190,7 @@ export class GameEngine {
   }
 
   getRandomRequestHusbandRole(chatId: Chat['id']) {
-    const currentRoom = this.rooms.get(chatId)!
+    const currentRoom = this._rooms.get(chatId)!
     const participants = [...currentRoom.participants.entries()]
     const filteredParticipants = participants.filter(hasUnknownRole)
 
@@ -199,7 +207,7 @@ export class GameEngine {
     user: User,
     accepted: boolean,
   ): AcceptHusbandRoleStatus {
-    const currentRoom = this.rooms.get(chatId)
+    const currentRoom = this._rooms.get(chatId)
 
     if (!currentRoom || currentRoom.status !== 'search_husband') return 'cancel'
 
@@ -215,14 +223,14 @@ export class GameEngine {
   }
 
   allСanceledHusbandRole(chatId: Chat['id']): boolean {
-    const currentRoom = this.rooms.get(chatId)!
+    const currentRoom = this._rooms.get(chatId)!
     const participants = [...currentRoom.participants.entries()]
 
     return !participants.find(hasUnknownRole)
   }
 
   assignRandomNumberToMembers(chatId: Chat['id']) {
-    const currentRoom = this.rooms.get(chatId)
+    const currentRoom = this._rooms.get(chatId)
     const husband = this.getHusbandInGame(chatId)
 
     if (!currentRoom || !husband) return
@@ -252,7 +260,7 @@ export class GameEngine {
   }
 
   sortMembersByNumber(chatId: Chat['id']) {
-    const currentRoom = this.rooms.get(chatId)
+    const currentRoom = this._rooms.get(chatId)
 
     if (!currentRoom) return
 
@@ -263,11 +271,11 @@ export class GameEngine {
   }
 
   completeHusbandSearch(chatId: Chat['id']) {
-    const currentRoom = this.rooms.get(chatId)
+    const currentRoom = this._rooms.get(chatId)
 
     if (currentRoom?.status !== 'search_husband') return
 
-    this.rooms.set(chatId, { ...currentRoom, status: 'question' })
+    this._rooms.set(chatId, { ...currentRoom, status: 'question' })
   }
 
   private isParticipantRole(
@@ -299,15 +307,15 @@ export class GameEngine {
 
     if (!currentRoom || currentRoom[1].status !== 'question') return
 
-    this.rooms.set(currentRoom[0], { ...currentRoom[1], replyId: message_id })
+    this._rooms.set(currentRoom[0], { ...currentRoom[1], replyId: message_id })
   }
 
   completeHusbandQuestion(chatId: Chat['id'], finished: boolean = false) {
-    const currentRoom = this.rooms.get(chatId)
+    const currentRoom = this._rooms.get(chatId)
 
     if (currentRoom?.status !== 'question') return
 
-    this.rooms.set(chatId, {
+    this._rooms.set(chatId, {
       ...currentRoom,
       status: finished ? 'finished' : 'answers',
     })
@@ -317,7 +325,7 @@ export class GameEngine {
     chatId: Chat['id'],
     messageId: MessageId['message_id'],
   ) {
-    const currentRoom = this.rooms.get(chatId)
+    const currentRoom = this._rooms.get(chatId)
 
     if (currentRoom?.status !== 'answers') return
 
@@ -333,7 +341,7 @@ export class GameEngine {
     }
 
     currentRoom.answers.clear()
-    this.rooms.set(chatId, {
+    this._rooms.set(chatId, {
       ...currentRoom,
       status: 'elimination',
       replyId: messageId,
@@ -356,7 +364,7 @@ export class GameEngine {
   }
 
   getMembersInGame(chatId: Chat['id']) {
-    const currentRoom = this.rooms.get(chatId)
+    const currentRoom = this._rooms.get(chatId)
 
     if (!currentRoom) return []
 
@@ -366,7 +374,7 @@ export class GameEngine {
   }
 
   getHusbandInGame(chatId: Chat['id']) {
-    const currentRoom = this.rooms.get(chatId)
+    const currentRoom = this._rooms.get(chatId)
 
     if (!currentRoom) return null
 
@@ -376,7 +384,7 @@ export class GameEngine {
   }
 
   setAFKMembersInAnswers(chatId: Chat['id']) {
-    const currentRoom = this.rooms.get(chatId)
+    const currentRoom = this._rooms.get(chatId)
 
     if (!currentRoom || currentRoom.status !== 'answers') return
 
@@ -395,7 +403,7 @@ export class GameEngine {
   }
 
   everyoneAnswered(chatId: Chat['id']): boolean {
-    const currentRoom = this.rooms.get(chatId)
+    const currentRoom = this._rooms.get(chatId)
 
     if (!currentRoom || currentRoom.status !== 'answers') return false
 
@@ -405,7 +413,7 @@ export class GameEngine {
   }
 
   skipElimination(chatId: Chat['id']) {
-    const currentRoom = this.rooms.get(chatId)
+    const currentRoom = this._rooms.get(chatId)
 
     if (
       !currentRoom ||
@@ -414,14 +422,14 @@ export class GameEngine {
     )
       return
 
-    this.rooms.set(chatId, {
+    this._rooms.set(chatId, {
       ...currentRoom,
       numberOfSkips: currentRoom.numberOfSkips - 1,
     })
   }
 
   eliminateMember(chatId: Chat['id'], memberId: User['id']) {
-    const currentRoom = this.rooms.get(chatId)
+    const currentRoom = this._rooms.get(chatId)
 
     if (!currentRoom || currentRoom.status !== 'elimination') return
 
@@ -433,18 +441,18 @@ export class GameEngine {
       ...participant,
       eliminated: true,
     })
-    this.rooms.set(chatId, {
+    this._rooms.set(chatId, {
       ...currentRoom,
       eliminatedParticipantId: memberId,
     })
   }
 
   completeElimination(chatId: Chat['id'], finished: boolean) {
-    const currentRoom = this.rooms.get(chatId)
+    const currentRoom = this._rooms.get(chatId)
 
     if (currentRoom?.status !== 'elimination') return
 
-    this.rooms.set(chatId, {
+    this._rooms.set(chatId, {
       ...currentRoom,
       status: finished ? 'finished' : 'question',
       eliminatedParticipantId: undefined,

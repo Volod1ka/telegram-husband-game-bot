@@ -37,7 +37,7 @@ const completeRegistration: CommandFn = async ctx => {
   if (ctx.chat.type === 'private') return
 
   const chatId = ctx.chat.id
-  const currentRoom = game.rooms.get(chatId)
+  const currentRoom = game.allRooms.get(chatId)
   const roomStatus = game.completeRegistration(chatId)
 
   if (
@@ -89,7 +89,7 @@ const checkStartGameAvailability: CommandFn = async (ctx, next) => {
   if (await deleteMessageAndCheckPrivate(ctx, next)) return
 
   if (!game.createRoom(ctx.chat.id)) {
-    const { registration } = game.rooms.get(ctx.chat.id)!
+    const { registration } = game.allRooms.get(ctx.chat.id)!
     const { user: creator } = await ctx.telegram.getChatMember(
       ctx.chat.id,
       registration!.creatorId,
@@ -114,7 +114,7 @@ const checkGameAvailability = async (
 ) => {
   if (await deleteMessageAndCheckPrivate(ctx, next)) return
 
-  const currentRoom = game.rooms.get(ctx.chat.id)
+  const currentRoom = game.allRooms.get(ctx.chat.id)
 
   if (currentRoom?.status !== 'registration') return
 
@@ -177,7 +177,7 @@ const handleStartGameNow: CommandFn = async (ctx, next) => {
 
 const handleStopGame: CommandFn = async ctx => {
   const chatId = ctx.chat.id
-  const { replyId } = game.rooms.get(chatId)!
+  const { replyId } = game.allRooms.get(chatId)!
   const textMessage = t('stop_game.base', {
     ctx,
     user: mentionWithHTML(ctx.from),
@@ -219,8 +219,8 @@ const handleExtendGame: CommandFn = async (ctx, next) => {
 
   const { message_id } = await ctx.replyWithHTML(
     t('extend_game.base', {
-      extend: remainsTime(EXTEND_REGISTRATION_TIMEOUT),
-      remains: remainsTime(remains),
+      extend: remainsTime(undefined, EXTEND_REGISTRATION_TIMEOUT),
+      remains: remainsTime(undefined, remains),
     }),
   )
 
@@ -262,7 +262,10 @@ const handleParticipate: ActionFn = async ctx => {
   try {
     await ctx.telegram.sendMessage(
       ctx.from.id,
-      t('answer_cb.participate.participant_added', { ctx }),
+      t('answer_cb.participate.participant_added', {
+        ctx,
+        user: mentionWithHTML(ctx.from),
+      }),
       { parse_mode: 'HTML' },
     )
   } catch (error) {
@@ -274,7 +277,7 @@ const handleParticipate: ActionFn = async ctx => {
     })
   }
 
-  const currentRoom = game.rooms.get(chatId)!
+  const currentRoom = game.allRooms.get(chatId)!
   const textMessage = t('start_game.set_of_participants', {
     users: mentionsOfParticipants(currentRoom.participants),
     count: currentRoom.participants.size,

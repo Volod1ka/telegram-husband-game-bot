@@ -31,11 +31,8 @@ const handleTimeoutEvent = async (
     .catch(error => logHandleError(error, ctx))
 
   game.completeHusbandQuestion(chatId, true)
-  // TODO: replace to finish scene
-  game.closeRoom(chatId)
 
-  // TODO: navigate to finish scene
-  ctx.scene.reset()
+  await ctx.scene.enter(SCENES.finished)
 }
 
 // ------- [ bot context ] ------- //

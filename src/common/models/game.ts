@@ -21,6 +21,7 @@ export type Question = Pick<MessageId, 'message_id'> & {
 }
 
 export type GameRoom = {
+  startDate: number
   registration: Registration | null
   status: GameStatus
   replyId?: MessageId['message_id']

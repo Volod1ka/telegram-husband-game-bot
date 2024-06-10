@@ -27,7 +27,7 @@ const handleTimeoutEvent = async (ctx: BotContext, chatId: Chat['id']) => {
 const completeAnswers = async (ctx: BotContext, chatId: Chat['id']) => {
   game.unregisterTimeoutEvent(chatId)
 
-  const { answers, replyId } = game.rooms.get(chatId)!
+  const { answers, replyId } = game.allRooms.get(chatId)!
   const members = game.getMembersInGame(chatId)
   const textMessage = answerOfMembers(members, answers)
 
@@ -62,9 +62,9 @@ const requestForAnswers: ContextFn = async ctx => {
 
   if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
 
-  const [chatId] = currentRoom
-  const members = game.getMembersInGame(chatId)
-  const husband = game.getHusbandInGame(chatId)
+  const [roomId] = currentRoom
+  const members = game.getMembersInGame(roomId)
+  const husband = game.getHusbandInGame(roomId)
 
   for (const [memberId] of members) {
     await ctx.telegram.sendMessage(memberId, t('member.answer.base'), {
@@ -79,8 +79,8 @@ const requestForAnswers: ContextFn = async ctx => {
   }
 
   game.registerTimeoutEvent(
-    chatId,
-    async () => handleTimeoutEvent(ctx, chatId),
+    roomId,
+    async () => handleTimeoutEvent(ctx, roomId),
     ANSWERS_TIMEOUT,
   )
 }

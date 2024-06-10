@@ -36,9 +36,9 @@ export const mentionsOfParticipants = (
     .join(', ')
 }
 
-export const remainsTime = (ms: number) => {
-  return formatDuration(intervalToDuration({ start: 0, end: ms }), {
-    format: ['minutes', 'seconds'],
+export const remainsTime = (startMs: number = 0, endMs: number) => {
+  return formatDuration(intervalToDuration({ start: startMs, end: endMs }), {
+    format: ['hours', 'minutes', 'seconds'],
     locale: uk,
   })
 }

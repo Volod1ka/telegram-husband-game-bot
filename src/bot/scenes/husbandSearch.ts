@@ -40,8 +40,8 @@ const searchHusband = async (ctx: BotContext) => {
 
   if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
 
-  const [chatId] = currentRoom
-  const [participantId, { user }] = game.getRandomRequestHusbandRole(chatId)
+  const [roomId] = currentRoom
+  const [participantId, { user }] = game.getRandomRequestHusbandRole(roomId)
 
   const { message_id } = await ctx.telegram.sendMessage(
     participantId,
@@ -58,7 +58,7 @@ const searchHusband = async (ctx: BotContext) => {
   } as BotContext
 
   game.registerTimeoutEvent(
-    chatId,
+    roomId,
     async () => handleTimeoutEvent(nextUserCtx, participantId, message_id),
     ACCEPT_HUSBAND_ROLE_TIMEOUT,
   )
@@ -68,7 +68,7 @@ const sendMessageToParticipations = async (
   ctx: BotContext,
   chatId: Chat['id'],
 ) => {
-  const { participants } = game.rooms.get(chatId)!
+  const { participants } = game.allRooms.get(chatId)!
 
   for (const [participantId, participant] of participants) {
     if (participant.role !== 'member' || participant.afk) continue
@@ -99,28 +99,28 @@ const handlePickHusbandRole = async (ctx: BotContext, accepted: boolean) => {
     return
   }
 
-  const [chatId] = currentRoom
-  const status = game.acceptHusbandRole(chatId, ctx.from!, accepted)
+  const [roomId] = currentRoom
+  const status = game.acceptHusbandRole(roomId, ctx.from!, accepted)
 
-  game.unregisterTimeoutEvent(chatId)
+  game.unregisterTimeoutEvent(roomId)
 
   switch (status) {
     case 'accept':
-      return completeHusbandSearch(ctx, chatId)
+      return completeHusbandSearch(ctx, roomId)
     case 'deny': {
-      const allCanceled = game.allСanceledHusbandRole(chatId)
+      const allCanceled = game.allСanceledHusbandRole(roomId)
       if (!allCanceled) {
         return searchHusband(ctx)
       }
 
-      const [husbandId, { user }] = game.getRandomRequestHusbandRole(chatId)
+      const [husbandId, { user }] = game.getRandomRequestHusbandRole(roomId)
 
-      game.acceptHusbandRole(chatId, user, true)
+      game.acceptHusbandRole(roomId, user, true)
 
       await ctx.telegram.sendMessage(husbandId, t('husband.random_role'), {
         parse_mode: 'HTML',
       })
-      return completeHusbandSearch(ctx, chatId)
+      return completeHusbandSearch(ctx, roomId)
     }
   }
 }

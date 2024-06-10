@@ -4,12 +4,15 @@ import {
   DEFAULT_GAME_ROOM,
   EMPTY_ROOM_EVENT,
   REACTIONS,
+  TELEGRAM_MESSAGE_LINK,
 } from '@constants'
 import game from '@game/engine'
 import type { GameRoom, RoomEvent } from '@models/game'
 import type { Participant } from '@models/roles'
 import type {
+  Chat,
   ChatMemberAdministrator,
+  MessageId,
   TelegramEmoji,
   User,
 } from '@telegraf/types'
@@ -88,6 +91,12 @@ export const hasCommand = (text: string): boolean => {
     text.includes(`/${command}`),
   )
 }
+
+export const createMessageLink = (
+  chatId: Chat['id'],
+  messageId: MessageId['message_id'],
+): string =>
+  `${TELEGRAM_MESSAGE_LINK}${chatId.toString().slice(4)}/${messageId}`
 
 export const handleCatch = (
   error: unknown,

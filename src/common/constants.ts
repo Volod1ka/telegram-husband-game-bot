@@ -31,11 +31,13 @@ export const ELIMINATION_TIMEOUT = ms('20s') // ms('1m')
 
 // ------- [ default data ] ------- //
 export const TELEGRAM_LINK = 'https://t.me/'
+export const TELEGRAM_MESSAGE_LINK = `${TELEGRAM_LINK}c/`
 export const TELEGRAM_MENTION = 'tg://user?id='
 
 export const EMPTY_ANSWER = ' – '
 
 export const DEFAULT_GAME_ROOM: GameRoom = {
+  startDate: Date.now(),
   answers: new Map(),
   numberOfSkips: ELIMINATION_SKIPS_COUNT,
   participants: new Map(),
@@ -128,7 +130,7 @@ export const BOT_COMMANDS_WITH_DESCRIPTION: BotCommand[] = [
   },
   {
     command: BOT_COMMANDS.extend_game,
-    description: `продовжити час реєстрації на ${remainsTime(EXTEND_REGISTRATION_TIMEOUT)}`,
+    description: `продовжити час реєстрації на ${remainsTime(undefined, EXTEND_REGISTRATION_TIMEOUT)}`,
   },
   {
     command: BOT_COMMANDS.help,

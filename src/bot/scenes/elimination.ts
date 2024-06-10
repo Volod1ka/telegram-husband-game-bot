@@ -16,8 +16,6 @@ import type {
 
 // ------- [ utility functions ] ------- //
 
-const resetScene = (ctx: BotContext) => ctx.scene.reset()
-
 const sendMessage = async (
   ctx: BotContext,
   chatId: Chat['id'],
@@ -35,10 +33,10 @@ const sendMessage = async (
 // ------- [ bot context ] ------- //
 
 const startElimination: ContextFn = async ctx => {
-  if (!ctx.from) return resetScene(ctx)
+  if (!ctx.from) return ctx.scene.reset()
 
   const currentRoom = game.getRoomOfUser(ctx.from.id)
-  if (!currentRoom) return resetScene(ctx) // TODO: ops не вдалось створити кімнату
+  if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
 
   const [roomId] = currentRoom
   const members = game.getMembersInGame(roomId)
@@ -55,7 +53,7 @@ const startElimination: ContextFn = async ctx => {
 }
 
 const handleAllAFKElimination = async (ctx: BotContext, chatId: Chat['id']) => {
-  const { replyId } = game.rooms.get(chatId)!
+  const { replyId } = game.allRooms.get(chatId)!
   const [, husband] = game.getHusbandInGame(chatId)!
 
   const textMessage = t('elimination.final.all_afk', {
@@ -63,12 +61,9 @@ const handleAllAFKElimination = async (ctx: BotContext, chatId: Chat['id']) => {
   })
 
   game.completeElimination(chatId, true)
-  // TODO: replace to finish scene
-  game.closeRoom(chatId)
 
-  // TODO: navigate to finish scene
-  resetScene(ctx)
   await sendMessage(ctx, chatId, textMessage, replyId)
+  await ctx.scene.enter(SCENES.finished)
 }
 
 const handleSingleWinnerElimination = async (
@@ -76,7 +71,7 @@ const handleSingleWinnerElimination = async (
   chatId: Chat['id'],
   participant: Participant,
 ) => {
-  const { replyId } = game.rooms.get(chatId)!
+  const { replyId } = game.allRooms.get(chatId)!
   const [, husband] = game.getHusbandInGame(chatId)!
 
   const textMessage = t('elimination.final.one_remained', {
@@ -87,12 +82,9 @@ const handleSingleWinnerElimination = async (
   })
 
   game.completeElimination(chatId, true)
-  // TODO: replace to finish scene
-  game.closeRoom(chatId)
 
-  // TODO: navigate to finish scene
-  resetScene(ctx)
   await sendMessage(ctx, chatId, textMessage, replyId)
+  await ctx.scene.enter(SCENES.finished)
 }
 
 const handleContinueElimination = async (
@@ -100,7 +92,7 @@ const handleContinueElimination = async (
   chatId: Chat['id'],
   members: [User['id'], Participant][],
 ) => {
-  const currentRoom = game.rooms.get(chatId)!
+  const currentRoom = game.allRooms.get(chatId)!
   const [husbandId] = game.getHusbandInGame(chatId)!
 
   const canSkip = currentRoom.numberOfSkips > 0
@@ -124,7 +116,7 @@ const handleElimination = async (
   // game.unregisterTimeoutEvent(chatId)
 
   const { replyId, participants, eliminatedParticipantId } =
-    game.rooms.get(chatId)!
+    game.allRooms.get(chatId)!
   const members = game.getMembersInGame(chatId)
 
   let eliminationMessage = ''
@@ -173,14 +165,7 @@ const handleElimination = async (
 
   game.completeElimination(chatId, gameFinished)
 
-  if (gameFinished) {
-    // TODO: replace to finish scene
-    game.closeRoom(chatId)
-    // TODO: navigate to finish scene
-    resetScene(ctx)
-  } else {
-    await ctx.scene.enter(SCENES.question)
-  }
+  await ctx.scene.enter(SCENES[gameFinished ? 'finished' : 'question'])
 }
 
 // ------- [ callback query ] ------- //
