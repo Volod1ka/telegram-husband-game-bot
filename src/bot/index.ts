@@ -1,7 +1,6 @@
 import Config from '@config'
 import { SCENES } from '@constants'
-import { getSessionKey } from '@tools/utils'
-import { format, toDate } from 'date-fns'
+import { getSessionKey, logHandleError } from '@tools/utils'
 import { Scenes, Telegraf, session } from 'telegraf'
 import {
   echoComposer,
@@ -26,16 +25,7 @@ bot.use(session(sessionOptions))
 bot.use(settingsComposer, permissionsComposer, echoComposer)
 bot.use(stage.middleware())
 
-bot.catch((error, ctx) => {
-  const date = format(toDate(Date.now()), '[dd/MM/yyyy – kk:mm:ss]')
-  const chat = JSON.stringify(ctx.chat)
-  const from = JSON.stringify(ctx.from)
-  const details = error instanceof TypeError ? error : JSON.stringify(error)
-
-  console.groupCollapsed(`\n${date} ≈> error:`)
-  console.log(`| chat: ${chat}\n| from: ${from}\n|\n| details: ${details}\n`)
-  console.groupEnd()
-})
+bot.catch(logHandleError)
 
 export default bot
 

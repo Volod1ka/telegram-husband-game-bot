@@ -2,7 +2,7 @@ import { INLINE_KEYBOARD_INVITE_CHAT } from '@constants'
 import game from '@game/engine'
 import { t } from '@i18n'
 import { mentionWithHTML } from '@tools/formatting'
-import { getRandomEmoji } from '@tools/utils'
+import { getRandomEmoji, handleCatch } from '@tools/utils'
 import { Composer } from 'telegraf'
 import type { BotContext, TextMessageFn } from '../context'
 
@@ -30,7 +30,7 @@ const handleHelpCommand: TextMessageFn = async ctx => {
   }
 
   await Promise.all([
-    ctx.deleteMessage().catch(),
+    ctx.deleteMessage().catch(error => handleCatch(error, ctx)),
     ctx.telegram.sendMessage(ctx.from.id, t('help.main'), {
       parse_mode: 'HTML',
     }),

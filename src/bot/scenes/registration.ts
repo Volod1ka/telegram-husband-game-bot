@@ -16,6 +16,7 @@ import {
   mentionsOfParticipants,
   remainsTime,
 } from '@tools/formatting'
+import { handleCatch } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import type {
   ActionFn,
@@ -71,11 +72,13 @@ const completeRegistration: CommandFn = async ctx => {
       textMessage,
       { parse_mode: 'HTML' },
     )
-  } catch {
+    await ctx
+      .unpinChatMessage(messageId)
+      .catch(error => handleCatch(error, ctx))
+  } catch (error) {
+    handleCatch(error, ctx)
     await ctx.replyWithHTML(textMessage)
   }
-
-  await ctx.unpinChatMessage(messageId).catch()
 
   if (roomStatus === 'next_status') {
     await ctx.scene.enter(SCENES.search_husband)
@@ -188,11 +191,11 @@ const onStopGame: CommandFn = async ctx => {
       textMessage,
       { parse_mode: 'HTML' },
     )
-  } catch {
+    await ctx.unpinChatMessage(replyId).catch(error => handleCatch(error, ctx))
+  } catch (error) {
+    handleCatch(error, ctx)
     await ctx.replyWithHTML(textMessage)
   }
-
-  await ctx.unpinChatMessage(replyId).catch()
 
   game.closeRoom(chatId)
 }
@@ -222,7 +225,7 @@ const onExtendGame: CommandFn = async (ctx, next) => {
   )
 
   const timeout = setTimeout(() => {
-    ctx.deleteMessage(message_id).catch()
+    ctx.deleteMessage(message_id).catch(error => handleCatch(error, ctx))
     clearTimeout(timeout)
   }, CLEAR_EXTEND_REGISTRATION_TIMEOUT)
 }
@@ -238,7 +241,8 @@ const checkParticipationAvailability: ActionFn = async (ctx, next) => {
     if (chatWithBot.type !== 'private') {
       throw new Error('Missing chat started by participation with bot')
     }
-  } catch {
+  } catch (error) {
+    handleCatch(error, ctx)
     return ctx.answerCbQuery(t('start.no_chat'), { show_alert: true })
   }
 
@@ -261,8 +265,9 @@ const onParticipate: ActionFn = async ctx => {
       t('answer_cb.participate.participant_added', { ctx }),
       { parse_mode: 'HTML' },
     )
-  } catch {
+  } catch (error) {
     game.removeParticipantFromRoom(chatId, ctx.from)
+    handleCatch(error, ctx)
 
     return ctx.answerCbQuery(t('answer_cb.participate.blocked_chat'), {
       show_alert: true,

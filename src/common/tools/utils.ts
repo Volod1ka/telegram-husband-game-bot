@@ -14,6 +14,7 @@ import type {
   User,
 } from '@telegraf/types'
 import type { BotContext } from 'bot/context'
+import { format, toDate } from 'date-fns'
 
 export type AdminRights = keyof typeof DEFAULT_ADMINISTRATOR_RIGHTS
 
@@ -86,4 +87,27 @@ export const hasCommand = (text: string): boolean => {
   return !!Object.values(BOT_COMMANDS).find(command =>
     text.includes(`/${command}`),
   )
+}
+
+export const handleCatch = (
+  error: unknown,
+  ctx: BotContext,
+  solution?: () => unknown,
+) => {
+  logHandleError(error, ctx)
+  return solution?.() ?? null
+}
+
+export const logHandleError = (error: unknown, ctx: BotContext) => {
+  const date = format(toDate(Date.now()), '[dd/MM/yyyy – kk:mm:ss]')
+  const chat = JSON.stringify(ctx.chat)
+  const from = JSON.stringify(ctx.from)
+  const details =
+    error instanceof TypeError
+      ? error
+      : JSON.stringify(error, null, 2).replaceAll('\n', '\n| ')
+
+  console.groupCollapsed(`\n${date} ≈> error:`)
+  console.log(`| chat: ${chat}\n| from: ${from}\n|\n| details: ${details}\n`)
+  console.groupEnd()
 }
