@@ -4,6 +4,7 @@ import { t } from '@i18n'
 import type { Participant } from '@models/roles'
 import type { Chat, MessageId, User } from '@telegraf/types'
 import { mentionWithHTML } from '@tools/formatting'
+import { getRandomText } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import { callbackQuery } from 'telegraf/filters'
 import type {
@@ -78,7 +79,7 @@ const handleSingleWinnerElimination = async (
     husband: mentionWithHTML(husband.user),
     number: participant.role === 'member' ? participant.number : 0,
     user: mentionWithHTML(participant.user),
-    info: '', // TODO: text
+    info: getRandomText(t('comments.union', { returnObjects: true })),
   })
 
   game.completeElimination(chatId, true)
@@ -123,7 +124,11 @@ const handleElimination = async (
   let gameFinished = false
 
   if (skipped) {
-    eliminationMessage = t('elimination.skipped', { info: '' }) // TODO: text
+    eliminationMessage = t('elimination.skipped', {
+      info: getRandomText(
+        t('comments.elimination.skipped', { returnObjects: true }),
+      ),
+    })
   } else {
     const eliminatedParticipant = participants.get(eliminatedParticipantId!)
 
@@ -136,23 +141,29 @@ const handleElimination = async (
         eliminationMessage = t('elimination.final.all_afk', {
           husband: mentionWithHTML(husband.user),
         })
-      } else if (members.length === 1 && firstMember.role === 'member') {
-        gameFinished = true
-        eliminationMessage = t('elimination.final.winner', {
-          eliminated_number: eliminatedParticipant.number,
-          eliminated: mentionWithHTML(eliminatedParticipant.user),
-          eliminated_info: '', // TODO: text
-          husband: mentionWithHTML(husband.user),
-          number: firstMember.number,
-          user: mentionWithHTML(firstMember.user),
-          info: '',
-        })
       } else {
-        eliminationMessage = t('elimination.accept', {
-          number: eliminatedParticipant.number,
-          user: mentionWithHTML(eliminatedParticipant.user),
-          info: '', // TODO: text
-        })
+        const eliminatedText = getRandomText(
+          t('comments.elimination.accept', { returnObjects: true }),
+        )
+
+        if (members.length === 1 && firstMember.role === 'member') {
+          gameFinished = true
+          eliminationMessage = t('elimination.final.winner', {
+            eliminated_number: eliminatedParticipant.number,
+            eliminated: mentionWithHTML(eliminatedParticipant.user),
+            eliminated_info: eliminatedText,
+            husband: mentionWithHTML(husband.user),
+            number: firstMember.number,
+            user: mentionWithHTML(firstMember.user),
+            info: getRandomText(t('comments.union', { returnObjects: true })),
+          })
+        } else {
+          eliminationMessage = t('elimination.accept', {
+            number: eliminatedParticipant.number,
+            user: mentionWithHTML(eliminatedParticipant.user),
+            info: eliminatedText,
+          })
+        }
       }
     }
   }

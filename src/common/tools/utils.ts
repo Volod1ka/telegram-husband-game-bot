@@ -38,7 +38,12 @@ export const getSessionKey = (ctx: BotContext) => {
 
 export const getRandomEmoji = (): TelegramEmoji => {
   const index = Math.floor(Math.random() * REACTIONS.length)
-  return REACTIONS[index]
+  return REACTIONS.at(index) ?? '🦄'
+}
+
+export const getRandomText = (texts: string[]) => {
+  const index = Math.floor(Math.random() * texts.length)
+  return texts.at(index)
 }
 
 export const createParticipant = (user: User): Participant => {
