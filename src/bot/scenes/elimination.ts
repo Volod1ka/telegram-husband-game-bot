@@ -79,7 +79,7 @@ const handleSingleWinnerElimination = async (
     husband: mentionWithHTML(husband.user),
     number: participant.role === 'member' ? participant.number : 0,
     user: mentionWithHTML(participant.user),
-    info: getRandomText(t('comments.union', { returnObjects: true })),
+    details: getRandomText(t('comments.union', { returnObjects: true })),
   })
 
   game.completeElimination(chatId, true)
@@ -125,7 +125,7 @@ const handleElimination = async (
 
   if (skipped) {
     eliminationMessage = t('elimination.skipped', {
-      info: getRandomText(
+      details: getRandomText(
         t('comments.elimination.skipped', { returnObjects: true }),
       ),
     })
@@ -155,13 +155,15 @@ const handleElimination = async (
             husband: mentionWithHTML(husband.user),
             number: firstMember.number,
             user: mentionWithHTML(firstMember.user),
-            info: getRandomText(t('comments.union', { returnObjects: true })),
+            details: getRandomText(
+              t('comments.union', { returnObjects: true }),
+            ),
           })
         } else {
           eliminationMessage = t('elimination.accept', {
             number: eliminatedParticipant.number,
             user: mentionWithHTML(eliminatedParticipant.user),
-            info: eliminatedText,
+            details: eliminatedText,
           })
         }
       }

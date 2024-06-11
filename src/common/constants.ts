@@ -18,7 +18,10 @@ export const MAX_SHOWN_USER_NAME_LENGTH = 20
 
 export const ELIMINATION_SKIPS_COUNT = 1
 export const MIN_PARTICIPANTS_COUNT = 2 // 4
-export const MAX_PARTICIPANTS_COUNT = 21 // 21 or 25?
+export const MAX_PARTICIPANTS_COUNT = 15
+
+export const MAX_ANSWER_LENGTH = 380
+export const MAX_QUESTION_LENGTH = 250
 
 // TODO: change props in finish state
 export const REGISTRATION_TIMEOUT = ms('20s') // ms('1m')
@@ -26,14 +29,16 @@ export const MAX_REGISTRATION_TIMEOUT = ms('3m')
 export const EXTEND_REGISTRATION_TIMEOUT = ms('10s') // ms('30s')
 export const CLEAR_EXTEND_REGISTRATION_TIMEOUT = ms('7s')
 export const ACCEPT_HUSBAND_ROLE_TIMEOUT = ms('20s') // ms('1m')
-export const ANSWERS_TIMEOUT = ms('20s') // ms('5m')
 export const QUESTION_TIMEOUT = ms('20s') // ms('2m')
-export const ELIMINATION_TIMEOUT = ms('20s') // ms('1m')
+export const ANSWERS_TIMEOUT = ms('20s') // ms('5m')
+export const ELIMINATION_TIMEOUT = ms('20s') // ms('8m')
 
 // ------- [ default data ] ------- //
 export const TELEGRAM_LINK = 'https://t.me/'
 export const TELEGRAM_MESSAGE_LINK = `${TELEGRAM_LINK}c/`
 export const TELEGRAM_MENTION = 'tg://user?id='
+
+export const MAX_TEXT_MESSAGE_LENGTH = 4096
 
 export const EMPTY_ANSWER = ' – '
 

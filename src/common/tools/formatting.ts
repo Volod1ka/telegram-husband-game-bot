@@ -9,6 +9,7 @@ import type { Participant } from '@models/roles'
 import type { Chat, User } from '@telegraf/types'
 import { formatDuration, intervalToDuration } from 'date-fns'
 import { uk } from 'date-fns/locale'
+import { getRandomText } from './utils'
 
 export const capitalizeFirstLetter = (text: string): string => {
   return text.charAt(0).toUpperCase() + text.slice(1)
@@ -68,6 +69,9 @@ export const answerOfMembers = (
       afks += t('member.answers.afk', {
         number,
         user: mentionWithHTML(user),
+        details: getRandomText(
+          t('comments.answers.afk', { returnObjects: true }),
+        ),
       })
     }
   }
