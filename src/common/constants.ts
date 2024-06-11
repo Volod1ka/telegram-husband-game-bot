@@ -18,6 +18,7 @@ export const MAX_SHOWN_USER_NAME_LENGTH = 20
 
 export const ELIMINATION_SKIPS_COUNT = 1
 export const MIN_PARTICIPANTS_COUNT = 2 // 4
+export const MAX_PARTICIPANTS_COUNT = 21 // 21 or 25?
 
 // TODO: change props in finish state
 export const REGISTRATION_TIMEOUT = ms('20s') // ms('1m')

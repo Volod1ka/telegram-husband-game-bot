@@ -4,6 +4,7 @@ import {
   CLEAR_EXTEND_REGISTRATION_TIMEOUT,
   EXTEND_REGISTRATION_TIMEOUT,
   INLINE_KEYBOARD_PARTICIPATE,
+  MAX_PARTICIPANTS_COUNT,
   MIN_PARTICIPANTS_COUNT,
   PARTICIPATE_CALLBACK_ANSWERS,
   REGISTRATION_TIMEOUT,
@@ -23,18 +24,14 @@ import type {
   BotContext,
   CommandContext,
   CommandFn,
+  ContextFn,
   NextContext,
 } from '../context'
 
-// ------- [ command ] ------- //
+// ------- [ bot context ] ------- //
 
-const deleteMessageAndCheckPrivate: CommandFn = async ctx => {
-  await ctx.deleteMessage()
-  return ctx.chat.type === 'private'
-}
-
-const completeRegistration: CommandFn = async ctx => {
-  if (ctx.chat.type === 'private') return
+const completeRegistration: ContextFn = async ctx => {
+  if (!ctx.chat || ctx.chat.type === 'private') return
 
   const chatId = ctx.chat.id
   const currentRoom = game.allRooms.get(chatId)
@@ -83,6 +80,13 @@ const completeRegistration: CommandFn = async ctx => {
   if (roomStatus === 'next_status') {
     await ctx.scene.enter(SCENES.search_husband)
   }
+}
+
+// ------- [ command ] ------- //
+
+const deleteMessageAndCheckPrivate: CommandFn = async ctx => {
+  await ctx.deleteMessage()
+  return ctx.chat.type === 'private'
 }
 
 const checkStartGameAvailability: CommandFn = async (ctx, next) => {
@@ -249,7 +253,7 @@ const checkParticipationAvailability: ActionFn = async (ctx, next) => {
   return next()
 }
 
-const handleParticipate: ActionFn = async ctx => {
+const handleParticipate: ActionFn = async (ctx, next) => {
   const chatId = ctx.chat!.id
   const roomStatus = game.addParticipantToRoom(chatId, ctx.from)
 
@@ -278,6 +282,11 @@ const handleParticipate: ActionFn = async ctx => {
   }
 
   const currentRoom = game.allRooms.get(chatId)!
+
+  if (currentRoom.participants.size >= MAX_PARTICIPANTS_COUNT) {
+    return completeRegistration(ctx, next)
+  }
+
   const textMessage = t('start_game.set_of_participants', {
     users: mentionsOfParticipants(currentRoom.participants),
     count: currentRoom.participants.size,
