@@ -2,6 +2,7 @@ import {
   ANSWERS_TIMEOUT,
   INLINE_KEYBOARD_CHAT_WITH_BOT,
   MAX_ANSWER_LENGTH,
+  MAX_HUSBAND_MESSAGE_LENGTH,
   SCENES,
 } from '@constants'
 import game from '@game/engine'
@@ -86,9 +87,11 @@ const requestForAnswers: ContextFn = async ctx => {
   }
 
   if (husband) {
-    await ctx.telegram.sendMessage(husband[0], t('husband.ask_send_message'), {
-      parse_mode: 'HTML',
-    })
+    await ctx.telegram.sendMessage(
+      husband[0],
+      t('husband.send_message.ask', { amount: MAX_HUSBAND_MESSAGE_LENGTH }),
+      { parse_mode: 'HTML' },
+    )
   }
 
   game.registerTimeoutEvent(
@@ -107,13 +110,17 @@ const checkSendTextMessageAvailability: TextMessageFn = async (ctx, next) => {
 }
 
 const handleSendMessageByHusband: TextMessageFn = async (ctx, next) => {
-  const {
-    text,
-    from: { id: userId },
-  } = ctx.message
+  const { text, from } = ctx.message
 
-  if (game.isHusbandRole(userId)) {
-    const currentRoom = game.getRoomOfUser(userId)
+  if (game.isHusbandRole(from.id)) {
+    if (text.length > MAX_HUSBAND_MESSAGE_LENGTH) {
+      return Promise.all([
+        ctx.react('🙈'),
+        ctx.replyWithHTML(t('husband.send_message.too_long')),
+      ])
+    }
+
+    const currentRoom = game.getRoomOfUser(from.id)
 
     if (!currentRoom) return
 
@@ -123,7 +130,7 @@ const handleSendMessageByHusband: TextMessageFn = async (ctx, next) => {
       ctx.react(getRandomEmoji()),
       ctx.telegram.sendMessage(
         roomId,
-        t('husband.send_message', { message: text }),
+        t('husband.send_message.base', { message: text }),
         { parse_mode: 'HTML' },
       ),
     ])

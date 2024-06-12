@@ -22,6 +22,7 @@ export const MAX_PARTICIPANTS_AMOUNT = 15
 
 export const MAX_ANSWER_LENGTH = 420
 export const MAX_QUESTION_LENGTH = 320
+export const MAX_HUSBAND_MESSAGE_LENGTH = 360
 
 // TODO: change props in finish state
 export const REGISTRATION_TIMEOUT = ms('20s') // ms('1m')
