@@ -14,6 +14,8 @@ import { Markup } from 'telegraf'
 
 // ------- [ properties ] ------- //
 
+const DEV = false
+
 export const MAX_SHOWN_USER_NAME_LENGTH = 20
 
 export const ELIMINATION_SKIPS_AMOUNT = 1
@@ -25,14 +27,14 @@ export const MAX_QUESTION_LENGTH = 320
 export const MAX_HUSBAND_MESSAGE_LENGTH = 360
 
 // TODO: change props in finish state
-export const REGISTRATION_TIMEOUT = ms('20s') // ms('1m')
+export const REGISTRATION_TIMEOUT = ms(DEV ? '20s' : '1m')
 export const MAX_REGISTRATION_TIMEOUT = ms('3m')
 export const EXTEND_REGISTRATION_TIMEOUT = ms('30s')
 export const CLEAR_EXTEND_REGISTRATION_TIMEOUT = ms('7s')
-export const ACCEPT_HUSBAND_ROLE_TIMEOUT = ms('20s') // ms('1m')
-export const QUESTION_TIMEOUT = ms('20s') // ms('2m')
-export const ANSWERS_TIMEOUT = ms('50s') // ms('5m')
-export const ELIMINATION_TIMEOUT = ms('20s') // ms('10m')
+export const ACCEPT_HUSBAND_ROLE_TIMEOUT = ms(DEV ? '20s' : '1m')
+export const QUESTION_TIMEOUT = ms(DEV ? '20s' : '2m')
+export const ANSWERS_TIMEOUT = ms(DEV ? '50s' : '5m')
+export const ELIMINATION_TIMEOUT = ms(DEV ? '20s' : '10m')
 
 // ------- [ default data ] ------- //
 export const TELEGRAM_LINK = 'https://t.me/'

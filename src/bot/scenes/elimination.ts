@@ -276,7 +276,7 @@ const handleCallbackQueryChoose: CallbackQueryDataFn = async ctx => {
     return handleSkipElimination(ctx, roomId)
   }
 
-  if (Number.isInteger(data)) {
+  if (!Number.isNaN(data)) {
     return handleChooseElimination(ctx, roomId, +data)
   }
 }

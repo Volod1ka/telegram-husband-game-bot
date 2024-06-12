@@ -239,17 +239,6 @@ const handleExtendGame: CommandFn = async (ctx, next) => {
 const checkParticipationAvailability: ActionFn = async (ctx, next) => {
   if (!ctx.chat || ctx.chat?.type === 'private') return
 
-  try {
-    const chatWithBot = await ctx.telegram.getChat(ctx.from.id)
-
-    if (chatWithBot.type !== 'private') {
-      throw new Error('Missing chat started by participation with bot')
-    }
-  } catch (error) {
-    handleCatch(error, ctx)
-    return ctx.answerCbQuery(t('start.no_chat'), { show_alert: true })
-  }
-
   return next()
 }
 
