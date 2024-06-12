@@ -2,6 +2,7 @@ import { MAX_REGISTRATION_TIMEOUT, MIN_PARTICIPANTS_AMOUNT } from '@constants'
 import type { GameRoom, GameStatus, RoomEvent } from '@models/game'
 import type { Participant } from '@models/roles'
 import type { Chat, MessageId, User } from '@telegraf/types'
+import { getRandomRange, getRandomToValue } from '@tools/math'
 import {
   createNewGameRoom,
   createNewRoomEvent,
@@ -195,7 +196,7 @@ export class GameEngine {
     const filteredParticipants = participants.filter(hasUnknownRole)
 
     const length = filteredParticipants.length || participants.length
-    const index = Math.floor(Math.random() * length)
+    const index = getRandomToValue(length)
 
     return filteredParticipants.length
       ? filteredParticipants[index]
@@ -231,23 +232,25 @@ export class GameEngine {
 
   assignRandomNumberToMembers(chatId: Chat['id']) {
     const currentRoom = this._rooms.get(chatId)
-    const husband = this.getHusbandInGame(chatId)
+    const husbandInGame = this.getHusbandInGame(chatId)
 
-    if (!currentRoom || !husband) return
+    if (!currentRoom || !husbandInGame) return
 
-    currentRoom.participants.delete(husband[0])
+    const { participants } = currentRoom
+    const [husbandId, husband] = husbandInGame
+
+    participants.delete(husbandId)
 
     const usedNumbers = new Set<number>()
 
-    for (const [key, participant] of currentRoom.participants) {
+    for (const [key, participant] of participants) {
       let randomNumber: number
       do {
-        randomNumber =
-          Math.floor(Math.random() * currentRoom.participants.size) + 1
+        randomNumber = getRandomRange(1, participants.size)
       } while (usedNumbers.has(randomNumber))
 
       usedNumbers.add(randomNumber)
-      currentRoom.participants.set(key, {
+      participants.set(key, {
         role: 'member',
         afk: participant.afk,
         eliminated: false,
@@ -256,7 +259,7 @@ export class GameEngine {
       })
     }
 
-    currentRoom.participants.set(husband[0], husband[1])
+    participants.set(husbandId, husband)
   }
 
   sortMembersByNumber(chatId: Chat['id']) {
@@ -412,6 +415,36 @@ export class GameEngine {
     return currentRoom.answers.size === membersInGame.length
   }
 
+  setEliminationQueryMessage(
+    chatId: Chat['id'],
+    messageId: MessageId['message_id'],
+  ) {
+    const currentRoom = this._rooms.get(chatId)
+
+    if (!currentRoom || currentRoom.status !== 'elimination') return
+
+    this._rooms.set(chatId, { ...currentRoom, elimination: { messageId } })
+  }
+
+  getMemberForElimination(chatId: Chat['id']): User['id'] | null {
+    const currentRoom = this._rooms.get(chatId)
+
+    if (
+      !currentRoom ||
+      currentRoom.status !== 'elimination' ||
+      currentRoom.numberOfSkips > 0
+    )
+      return null
+
+    const members = this.getMembersInGame(chatId)
+
+    if (!members.length) return null
+
+    const randomIndex = getRandomToValue(members.length)
+
+    return members[randomIndex][0]
+  }
+
   skipElimination(chatId: Chat['id']) {
     const currentRoom = this._rooms.get(chatId)
 
@@ -431,7 +464,8 @@ export class GameEngine {
   eliminateMember(chatId: Chat['id'], memberId: User['id']) {
     const currentRoom = this._rooms.get(chatId)
 
-    if (!currentRoom || currentRoom.status !== 'elimination') return
+    if (!currentRoom?.elimination || currentRoom.status !== 'elimination')
+      return
 
     const participant = currentRoom.participants.get(memberId)
 
@@ -441,9 +475,13 @@ export class GameEngine {
       ...participant,
       eliminated: true,
     })
+
     this._rooms.set(chatId, {
       ...currentRoom,
-      eliminatedParticipantId: memberId,
+      elimination: {
+        ...currentRoom.elimination,
+        eliminatedMemberId: memberId,
+      },
     })
   }
 
@@ -455,7 +493,7 @@ export class GameEngine {
     this._rooms.set(chatId, {
       ...currentRoom,
       status: finished ? 'finished' : 'question',
-      eliminatedParticipantId: undefined,
+      elimination: undefined,
       replyId: undefined,
     })
   }

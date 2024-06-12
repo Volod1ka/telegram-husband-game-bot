@@ -1,15 +1,19 @@
-import { BOT_ACTIONS, INLINE_KEYBOARD_ELIMINATION, SCENES } from '@constants'
+import {
+  BOT_ACTIONS,
+  ELIMINATION_TIMEOUT,
+  INLINE_KEYBOARD_ELIMINATION,
+  SCENES,
+} from '@constants'
 import game from '@game/engine'
 import { t } from '@i18n'
 import type { Participant } from '@models/roles'
 import type { Chat, MessageId, User } from '@telegraf/types'
 import { mentionWithHTML } from '@tools/formatting'
-import { getRandomText } from '@tools/utils'
+import { getRandomText, handleCatch } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import { callbackQuery } from 'telegraf/filters'
 import type {
   BotContext,
-  CallbackQueryDataContext,
   CallbackQueryDataFn,
   ContextFn,
   GuardCallbackQueryDataFn,
@@ -29,6 +33,59 @@ const sendMessage = async (
       ? { message_id: replyId, allow_sending_without_reply: true }
       : undefined,
   })
+}
+
+const editMessageText = async (
+  ctx: BotContext,
+  userId: User['id'],
+  messageId: MessageId['message_id'],
+  message: string,
+) => {
+  try {
+    await ctx.telegram.editMessageText(userId, messageId, undefined, message, {
+      parse_mode: 'HTML',
+    })
+  } catch (error) {
+    handleCatch(error, ctx)
+    await sendMessage(ctx, userId, message)
+  }
+}
+
+const handleTimeoutEvent = async (
+  ctx: BotContext,
+  chatId: Chat['id'],
+  husbandId: User['id'],
+) => {
+  const { elimination } = game.allRooms.get(chatId)!
+
+  if (!elimination) return
+
+  await editMessageText(
+    ctx,
+    husbandId,
+    elimination.messageId,
+    t('husband.elimination.chosen_afk'),
+  )
+
+  const memberId = game.getMemberForElimination(chatId)
+
+  if (memberId) {
+    return handleChooseElimination(ctx, chatId, memberId)
+  }
+
+  await handleSkipElimination(ctx, chatId)
+}
+
+const registerTimeoutEvent = (
+  ctx: BotContext,
+  chatId: Chat['id'],
+  husbandId: User['id'],
+) => {
+  game.registerTimeoutEvent(
+    chatId,
+    async () => handleTimeoutEvent(ctx, chatId, husbandId),
+    ELIMINATION_TIMEOUT,
+  )
 }
 
 // ------- [ bot context ] ------- //
@@ -99,13 +156,17 @@ const handleContinueElimination = async (
   const canSkip = currentRoom.numberOfSkips > 0
   const textMessage = `${t('husband.elimination.ask')}${canSkip ? t('husband.elimination.can_skip', { amount: currentRoom.numberOfSkips }) : ''}`
 
-  await ctx.telegram.sendMessage(husbandId, textMessage, {
-    reply_markup: INLINE_KEYBOARD_ELIMINATION(members, canSkip).reply_markup,
-    parse_mode: 'HTML',
-  })
+  const { message_id } = await ctx.telegram.sendMessage(
+    husbandId,
+    textMessage,
+    {
+      reply_markup: INLINE_KEYBOARD_ELIMINATION(members, canSkip).reply_markup,
+      parse_mode: 'HTML',
+    },
+  )
 
-  // TODO:
-  // game.registerTimeoutEvent(chatId, async () => {}, ELIMINATION_TIMEOUT)
+  game.setEliminationQueryMessage(chatId, message_id)
+  registerTimeoutEvent(ctx, chatId, husbandId)
 }
 
 const handleElimination = async (
@@ -113,11 +174,9 @@ const handleElimination = async (
   chatId: Chat['id'],
   skipped: boolean,
 ) => {
-  // TODO:
-  // game.unregisterTimeoutEvent(chatId)
+  game.unregisterTimeoutEvent(chatId)
 
-  const { replyId, participants, eliminatedParticipantId } =
-    game.allRooms.get(chatId)!
+  const { replyId, participants, elimination } = game.allRooms.get(chatId)!
   const members = game.getMembersInGame(chatId)
 
   let eliminationMessage = ''
@@ -130,10 +189,9 @@ const handleElimination = async (
       ),
     })
   } else {
-    const eliminatedParticipant = participants.get(eliminatedParticipantId!)
+    const eliminatedMember = participants.get(elimination!.eliminatedMemberId!)
 
-    if (eliminatedParticipant?.role === 'member') {
-      const firstMember = members[0][1]
+    if (eliminatedMember?.role === 'member') {
       const [, husband] = game.getHusbandInGame(chatId)!
 
       if (members.length === 0) {
@@ -142,6 +200,7 @@ const handleElimination = async (
           husband: mentionWithHTML(husband.user),
         })
       } else {
+        const firstMember = members[0][1]
         const eliminatedText = getRandomText(
           t('comments.elimination.accept', { returnObjects: true }),
         )
@@ -149,8 +208,8 @@ const handleElimination = async (
         if (members.length === 1 && firstMember.role === 'member') {
           gameFinished = true
           eliminationMessage = t('elimination.final.winner', {
-            eliminated_number: eliminatedParticipant.number,
-            eliminated: mentionWithHTML(eliminatedParticipant.user),
+            eliminated_number: eliminatedMember.number,
+            eliminated: mentionWithHTML(eliminatedMember.user),
             eliminated_info: eliminatedText,
             husband: mentionWithHTML(husband.user),
             number: firstMember.number,
@@ -161,8 +220,8 @@ const handleElimination = async (
           })
         } else {
           eliminationMessage = t('elimination.accept', {
-            number: eliminatedParticipant.number,
-            user: mentionWithHTML(eliminatedParticipant.user),
+            number: eliminatedMember.number,
+            user: mentionWithHTML(eliminatedMember.user),
             details: eliminatedText,
           })
         }
@@ -181,6 +240,20 @@ const handleElimination = async (
   await ctx.scene.enter(SCENES[gameFinished ? 'finished' : 'question'])
 }
 
+const handleSkipElimination = async (ctx: BotContext, chatId: Chat['id']) => {
+  game.skipElimination(chatId)
+  await handleElimination(ctx, chatId, true)
+}
+
+const handleChooseElimination = async (
+  ctx: BotContext,
+  chatId: Chat['id'],
+  memberId: User['id'],
+) => {
+  game.eliminateMember(chatId, memberId)
+  await handleElimination(ctx, chatId, false)
+}
+
 // ------- [ callback query ] ------- //
 
 const handleCallbackQueryChoose: CallbackQueryDataFn = async ctx => {
@@ -189,41 +262,23 @@ const handleCallbackQueryChoose: CallbackQueryDataFn = async ctx => {
 
   if (!currentRoom) return
 
-  const [roomId] = currentRoom
+  const [roomId, { elimination }] = currentRoom
   const data = ctx.callbackQuery.data
 
-  await ctx.telegram.editMessageText(
+  await editMessageText(
+    ctx,
     userId,
-    ctx.callbackQuery.message!.message_id,
-    undefined,
+    elimination!.messageId!,
     t('husband.elimination.chosen_one'),
-    { parse_mode: 'HTML' },
   )
 
   if (data === BOT_ACTIONS.skip_elimination) {
     return handleSkipElimination(ctx, roomId)
   }
 
-  if (!Number.isNaN(data)) {
+  if (Number.isInteger(data)) {
     return handleChooseElimination(ctx, roomId, +data)
   }
-}
-
-const handleSkipElimination = async (
-  ctx: CallbackQueryDataContext,
-  chatId: Chat['id'],
-) => {
-  game.skipElimination(chatId)
-  await handleElimination(ctx, chatId, true)
-}
-
-const handleChooseElimination = async (
-  ctx: CallbackQueryDataContext,
-  chatId: Chat['id'],
-  memberId: User['id'],
-) => {
-  game.eliminateMember(chatId, memberId)
-  await handleElimination(ctx, chatId, false)
 }
 
 // ------- [ scene ] ------- //

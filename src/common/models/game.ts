@@ -20,6 +20,11 @@ export type Question = Pick<MessageId, 'message_id'> & {
   text: string
 }
 
+export type Elimination = {
+  messageId: MessageId['message_id']
+  eliminatedMemberId?: User['id']
+}
+
 export type GameRoom = {
   startDate: number
   registration: Registration | null
@@ -28,7 +33,7 @@ export type GameRoom = {
   // question?: Question
   answers: Map<User['id'], string>
   numberOfSkips: number
-  eliminatedParticipantId?: User['id'] // | null
+  elimination?: Elimination
   participants: Map<User['id'], Participant>
 }
 

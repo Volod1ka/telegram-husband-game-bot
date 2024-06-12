@@ -18,6 +18,7 @@ import type {
 } from '@telegraf/types'
 import type { BotContext } from 'bot/context'
 import { format, toDate } from 'date-fns'
+import { getRandomToValue } from './math'
 
 export type AdminRights = keyof typeof DEFAULT_ADMINISTRATOR_RIGHTS
 
@@ -37,12 +38,12 @@ export const getSessionKey = (ctx: BotContext) => {
 }
 
 export const getRandomEmoji = (): TelegramEmoji => {
-  const index = Math.floor(Math.random() * REACTIONS.length)
+  const index = getRandomToValue(REACTIONS.length)
   return REACTIONS.at(index) ?? '🦄'
 }
 
 export const getRandomText = (texts: string[]) => {
-  const index = Math.floor(Math.random() * texts.length)
+  const index = getRandomToValue(texts.length)
   return texts.at(index)
 }
 
