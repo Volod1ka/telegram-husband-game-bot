@@ -4,7 +4,8 @@ import bot from '@bot'
 import type { Telegraf } from 'telegraf'
 
 const launchOptions: Telegraf.LaunchOptions = {
-  // allowedUpdates: ['callback_query', 'message'],
+  dropPendingUpdates: true,
+  allowedUpdates: ['message', 'callback_query', 'my_chat_member'],
 }
 
 bot.launch(launchOptions, () => {

@@ -22,7 +22,9 @@ const stage = new Scenes.Stage<BotContext>(allScenes, {
 const sessionOptions = { getSessionKey } satisfies SessionOptions
 
 bot.use(session(sessionOptions))
-bot.use(settingsComposer, permissionsComposer, echoComposer)
+bot.use(settingsComposer)
+bot.use(permissionsComposer)
+bot.use(echoComposer)
 bot.use(stage.middleware())
 
 bot.catch(logHandleError)
@@ -31,3 +33,5 @@ export default bot
 
 // TODO: set languale
 // ctx.reply(t('hi.text', { lng: 'en' satisfies Language }))
+// ctx.sendDice({})
+// ctx.sendChatAction('typing')

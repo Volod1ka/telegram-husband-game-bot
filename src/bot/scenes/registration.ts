@@ -158,7 +158,7 @@ const checkStopGameAvailability: CommandFn = async (ctx, next) => {
 const handleStartGame: CommandFn = async (ctx, next) => {
   const { message_id } = await ctx.replyWithHTML(
     t('start_game.base', { ctx }),
-    INLINE_KEYBOARD_PARTICIPATE,
+    INLINE_KEYBOARD_PARTICIPATE(ctx.botInfo.username),
   )
 
   await ctx.pinChatMessage(message_id)
@@ -283,7 +283,8 @@ const handleParticipate: ActionFn = async (ctx, next) => {
 
   await ctx.editMessageText(textMessage, {
     parse_mode: 'HTML',
-    reply_markup: INLINE_KEYBOARD_PARTICIPATE.reply_markup,
+    reply_markup: INLINE_KEYBOARD_PARTICIPATE(ctx.botInfo.username)
+      .reply_markup,
   })
 }
 

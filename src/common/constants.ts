@@ -160,9 +160,16 @@ export const PARTICIPATE_CALLBACK_ANSWERS: Record<
 
 // ------- [ inline keyboard ] ------- //
 
-export const INLINE_KEYBOARD_PARTICIPATE = Markup.inlineKeyboard([
-  Markup.button.callback(t('button.participate'), BOT_ACTIONS.participate),
-])
+export const INLINE_KEYBOARD_PARTICIPATE = (bot_username: string) =>
+  Markup.inlineKeyboard([
+    [Markup.button.callback(t('button.participate'), BOT_ACTIONS.participate)],
+    [
+      Markup.button.url(
+        t('button.go_to_chat'),
+        `${TELEGRAM_LINK}${bot_username}`,
+      ),
+    ],
+  ])
 
 export const INLINE_KEYBOARD_INVITE_CHAT = (bot_username: string) =>
   Markup.inlineKeyboard([
