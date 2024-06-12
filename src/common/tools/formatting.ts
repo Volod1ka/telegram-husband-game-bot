@@ -1,12 +1,13 @@
 import {
   EMPTY_ANSWER,
   MAX_SHOWN_USER_NAME_LENGTH,
+  MAX_TEXT_MESSAGE_LENGTH,
   TELEGRAM_MENTION,
 } from '@constants'
 import { t } from '@i18n'
 import type { GameRoom } from '@models/game'
 import type { Participant } from '@models/roles'
-import type { Chat, User } from '@telegraf/types'
+import type { User } from '@telegraf/types'
 import { formatDuration, intervalToDuration } from 'date-fns'
 import { uk } from 'date-fns/locale'
 import { getRandomText } from './utils'
@@ -44,37 +45,59 @@ export const remainsTime = (startMs: number = 0, endMs: number) => {
   })
 }
 
-export const answerOfMembers = (
-  membersInGame: [Chat['id'], Participant][],
+export const getAnswerOfMembers = (
+  membersInGame: [User['id'], Participant][],
   answers: GameRoom['answers'],
 ) => {
-  let lines = ''
-  let afks = ''
+  let currentMessageIndex = 0
+  const result: string[] = [t('member.answers.base')]
+  const answerLines: string[] = []
+  const afkMessages: string[] = []
 
   for (const [memberId, member] of membersInGame) {
     if (member.role !== 'member') continue
 
     const { afk, eliminated, number, user } = member
     const answer = answers.get(memberId)
-    const modifiedAnswer = answer?.length
+    const formattedAnswer = answer?.length
       ? capitalizeFirstLetter(answer)
       : EMPTY_ANSWER
 
-    lines += t('member.answers.line', {
-      number,
-      answer: modifiedAnswer,
-    })
+    answerLines.push(
+      t('member.answers.line', {
+        number,
+        answer: formattedAnswer,
+      }),
+    )
 
     if (afk && !eliminated) {
-      afks += t('member.answers.afk', {
-        number,
-        user: mentionWithHTML(user),
-        details: getRandomText(
-          t('comments.answers.afk', { returnObjects: true }),
-        ),
-      })
+      afkMessages.push(
+        t('member.answers.afk', {
+          number,
+          user: mentionWithHTML(user),
+          details: getRandomText(
+            t('comments.answers.afk', { returnObjects: true }),
+          ),
+        }),
+      )
     }
   }
 
-  return `${t('member.answers.base')}${lines}${afks}`
+  const appendLinesToResult = (lines: string[]) => {
+    for (const line of lines) {
+      if (
+        result[currentMessageIndex].length + line.length >
+        MAX_TEXT_MESSAGE_LENGTH
+      ) {
+        result.push('')
+        currentMessageIndex++
+      }
+      result[currentMessageIndex] += line
+    }
+  }
+
+  appendLinesToResult(answerLines)
+  appendLinesToResult(afkMessages)
+
+  return result
 }

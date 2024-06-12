@@ -20,18 +20,18 @@ export const ELIMINATION_SKIPS_AMOUNT = 1
 export const MIN_PARTICIPANTS_AMOUNT = 2 // 4
 export const MAX_PARTICIPANTS_AMOUNT = 15
 
-export const MAX_ANSWER_LENGTH = 400
-export const MAX_QUESTION_LENGTH = 280
+export const MAX_ANSWER_LENGTH = 420
+export const MAX_QUESTION_LENGTH = 320
 
 // TODO: change props in finish state
 export const REGISTRATION_TIMEOUT = ms('20s') // ms('1m')
 export const MAX_REGISTRATION_TIMEOUT = ms('3m')
-export const EXTEND_REGISTRATION_TIMEOUT = ms('10s') // ms('30s')
+export const EXTEND_REGISTRATION_TIMEOUT = ms('30s')
 export const CLEAR_EXTEND_REGISTRATION_TIMEOUT = ms('7s')
 export const ACCEPT_HUSBAND_ROLE_TIMEOUT = ms('20s') // ms('1m')
 export const QUESTION_TIMEOUT = ms('20s') // ms('2m')
-export const ANSWERS_TIMEOUT = ms('20s') // ms('5m')
-export const ELIMINATION_TIMEOUT = ms('20s') // ms('8m')
+export const ANSWERS_TIMEOUT = ms('50s') // ms('5m')
+export const ELIMINATION_TIMEOUT = ms('20s') // ms('10m')
 
 // ------- [ default data ] ------- //
 export const TELEGRAM_LINK = 'https://t.me/'

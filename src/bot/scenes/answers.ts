@@ -6,8 +6,8 @@ import {
 } from '@constants'
 import game from '@game/engine'
 import { t } from '@i18n'
-import type { Chat } from '@telegraf/types'
-import { answerOfMembers } from '@tools/formatting'
+import type { Chat, MessageId } from '@telegraf/types'
+import { getAnswerOfMembers } from '@tools/formatting'
 import { getRandomEmoji } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import { message } from 'telegraf/filters'
@@ -30,7 +30,8 @@ const completeAnswers = async (ctx: BotContext, chatId: Chat['id']) => {
 
   const { answers, replyId } = game.allRooms.get(chatId)!
   const members = game.getMembersInGame(chatId)
-  const textMessage = answerOfMembers(members, answers)
+  const textMessages = getAnswerOfMembers(members, answers)
+  let replyMessageId: MessageId['message_id'] = 0
 
   for (const [memberId, member] of members) {
     if (!member.afk) continue
@@ -40,16 +41,25 @@ const completeAnswers = async (ctx: BotContext, chatId: Chat['id']) => {
     })
   }
 
-  const { message_id } = await ctx.telegram.sendMessage(chatId, textMessage, {
-    reply_markup: INLINE_KEYBOARD_CHAT_WITH_BOT(ctx.botInfo.username)
-      .reply_markup,
-    parse_mode: 'HTML',
-    reply_parameters: replyId
-      ? { message_id: replyId, allow_sending_without_reply: true }
-      : undefined,
-  })
+  for (const [index, text] of textMessages.entries()) {
+    const { message_id } = await ctx.telegram.sendMessage(chatId, text, {
+      reply_markup:
+        index === textMessages.length - 1
+          ? INLINE_KEYBOARD_CHAT_WITH_BOT(ctx.botInfo.username).reply_markup
+          : undefined,
+      parse_mode: 'HTML',
+      reply_parameters:
+        index === 0 && replyId
+          ? { message_id: replyId, allow_sending_without_reply: true }
+          : undefined,
+    })
 
-  game.completeMemberAnswers(chatId, message_id)
+    if (index === 0) {
+      replyMessageId = message_id
+    }
+  }
+
+  game.completeMemberAnswers(chatId, replyMessageId)
 
   await ctx.scene.enter(SCENES.elimination)
 }
