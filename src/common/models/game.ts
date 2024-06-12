@@ -25,7 +25,7 @@ export type GameRoom = {
   registration: Registration | null
   status: GameStatus
   replyId?: MessageId['message_id']
-  // question?: string
+  // question?: Question
   answers: Map<User['id'], string>
   numberOfSkips: number
   eliminatedParticipantId?: User['id'] // | null

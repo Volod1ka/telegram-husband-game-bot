@@ -4,8 +4,8 @@ import {
   CLEAR_EXTEND_REGISTRATION_TIMEOUT,
   EXTEND_REGISTRATION_TIMEOUT,
   INLINE_KEYBOARD_PARTICIPATE,
-  MAX_PARTICIPANTS_COUNT,
-  MIN_PARTICIPANTS_COUNT,
+  MAX_PARTICIPANTS_AMOUNT,
+  MIN_PARTICIPANTS_AMOUNT,
   PARTICIPATE_CALLBACK_ANSWERS,
   REGISTRATION_TIMEOUT,
   SCENES,
@@ -53,7 +53,7 @@ const completeRegistration: ContextFn = async ctx => {
   switch (roomStatus) {
     case 'not_enough_participants':
       textMessage = t('stop_game.not_enough_participants', {
-        count: MIN_PARTICIPANTS_COUNT,
+        amount: MIN_PARTICIPANTS_AMOUNT,
       })
       break
     case 'next_status':
@@ -283,13 +283,13 @@ const handleParticipate: ActionFn = async (ctx, next) => {
 
   const currentRoom = game.allRooms.get(chatId)!
 
-  if (currentRoom.participants.size >= MAX_PARTICIPANTS_COUNT) {
+  if (currentRoom.participants.size >= MAX_PARTICIPANTS_AMOUNT) {
     return completeRegistration(ctx, next)
   }
 
   const textMessage = t('start_game.set_of_participants', {
     users: mentionsOfParticipants(currentRoom.participants),
-    count: currentRoom.participants.size,
+    amount: currentRoom.participants.size,
   })
 
   await ctx.editMessageText(textMessage, {

@@ -1,6 +1,7 @@
 import {
   ANSWERS_TIMEOUT,
   INLINE_KEYBOARD_CHAT_WITH_BOT,
+  MAX_ANSWER_LENGTH,
   SCENES,
 } from '@constants'
 import game from '@game/engine'
@@ -67,9 +68,11 @@ const requestForAnswers: ContextFn = async ctx => {
   const husband = game.getHusbandInGame(roomId)
 
   for (const [memberId] of members) {
-    await ctx.telegram.sendMessage(memberId, t('member.answer.base'), {
-      parse_mode: 'HTML',
-    })
+    await ctx.telegram.sendMessage(
+      memberId,
+      t('member.answer.base', { amount: MAX_ANSWER_LENGTH }),
+      { parse_mode: 'HTML' },
+    )
   }
 
   if (husband) {
@@ -120,12 +123,17 @@ const handleSendMessageByHusband: TextMessageFn = async (ctx, next) => {
 }
 
 const handleSendAnswer: TextMessageFn = async ctx => {
-  const {
-    text,
-    from: { id: userId },
-  } = ctx.message
-  const answered = game.setAnswerByMember(userId, text)
-  const currentRoom = game.getRoomOfUser(userId)
+  const { text, from } = ctx.message
+
+  if (text.length > MAX_ANSWER_LENGTH) {
+    return Promise.all([
+      ctx.react('🙈'),
+      ctx.replyWithHTML(t('member.answer.too_long')),
+    ])
+  }
+
+  const answered = game.setAnswerByMember(from.id, text)
+  const currentRoom = game.getRoomOfUser(from.id)
 
   if (!answered || !currentRoom) return
 

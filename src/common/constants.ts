@@ -16,12 +16,12 @@ import { Markup } from 'telegraf'
 
 export const MAX_SHOWN_USER_NAME_LENGTH = 20
 
-export const ELIMINATION_SKIPS_COUNT = 1
-export const MIN_PARTICIPANTS_COUNT = 2 // 4
-export const MAX_PARTICIPANTS_COUNT = 15
+export const ELIMINATION_SKIPS_AMOUNT = 1
+export const MIN_PARTICIPANTS_AMOUNT = 2 // 4
+export const MAX_PARTICIPANTS_AMOUNT = 15
 
-export const MAX_ANSWER_LENGTH = 380
-export const MAX_QUESTION_LENGTH = 250
+export const MAX_ANSWER_LENGTH = 400
+export const MAX_QUESTION_LENGTH = 280
 
 // TODO: change props in finish state
 export const REGISTRATION_TIMEOUT = ms('20s') // ms('1m')
@@ -45,7 +45,7 @@ export const EMPTY_ANSWER = ' – '
 export const DEFAULT_GAME_ROOM: GameRoom = {
   startDate: Date.now(),
   answers: new Map(),
-  numberOfSkips: ELIMINATION_SKIPS_COUNT,
+  numberOfSkips: ELIMINATION_SKIPS_AMOUNT,
   participants: new Map(),
   registration: null,
   status: 'registration',

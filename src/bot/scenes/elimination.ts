@@ -97,7 +97,7 @@ const handleContinueElimination = async (
   const [husbandId] = game.getHusbandInGame(chatId)!
 
   const canSkip = currentRoom.numberOfSkips > 0
-  const textMessage = `${t('husband.elimination.ask')}${canSkip ? t('husband.elimination.can_skip', { count: currentRoom.numberOfSkips }) : ''}`
+  const textMessage = `${t('husband.elimination.ask')}${canSkip ? t('husband.elimination.can_skip', { amount: currentRoom.numberOfSkips }) : ''}`
 
   await ctx.telegram.sendMessage(husbandId, textMessage, {
     reply_markup: INLINE_KEYBOARD_ELIMINATION(members, canSkip).reply_markup,

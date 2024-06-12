@@ -1,4 +1,4 @@
-import { MAX_REGISTRATION_TIMEOUT, MIN_PARTICIPANTS_COUNT } from '@constants'
+import { MAX_REGISTRATION_TIMEOUT, MIN_PARTICIPANTS_AMOUNT } from '@constants'
 import type { GameRoom, GameStatus, RoomEvent } from '@models/game'
 import type { Participant } from '@models/roles'
 import type { Chat, MessageId, User } from '@telegraf/types'
@@ -176,7 +176,7 @@ export class GameEngine {
 
     if (currentRoom?.status !== 'registration') return 'not_registration'
 
-    if (currentRoom.participants.size >= MIN_PARTICIPANTS_COUNT) {
+    if (currentRoom.participants.size >= MIN_PARTICIPANTS_AMOUNT) {
       this._rooms.set(chatId, {
         ...currentRoom,
         startDate: Date.now(),

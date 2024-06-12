@@ -1,5 +1,6 @@
 import {
   INLINE_KEYBOARD_CHAT_WITH_BOT,
+  MAX_QUESTION_LENGTH,
   QUESTION_TIMEOUT,
   SCENES,
 } from '@constants'
@@ -24,11 +25,14 @@ const handleTimeoutEvent = async (
   chatId: Chat['id'],
   husbandId: User['id'],
 ) => {
-  await ctx.telegram
-    .sendMessage(husbandId, t('husband.question.afk'), {
+  await Promise.all([
+    ctx.telegram.sendMessage(chatId, t('husband.question.afk.chat'), {
       parse_mode: 'HTML',
-    })
-    .catch(error => logHandleError(error, ctx))
+    }),
+    ctx.telegram.sendMessage(husbandId, t('husband.question.afk.personal'), {
+      parse_mode: 'HTML',
+    }),
+  ]).catch(error => logHandleError(error, ctx))
 
   game.completeHusbandQuestion(chatId, true)
 
@@ -49,9 +53,11 @@ const requestForQuestion: ContextFn = async ctx => {
 
   if (!husband) return ctx.scene.reset()
 
-  await ctx.telegram.sendMessage(husband[0], t('husband.question.base'), {
-    parse_mode: 'HTML',
-  })
+  await ctx.telegram.sendMessage(
+    husband[0],
+    t('husband.question.base', { amount: MAX_QUESTION_LENGTH }),
+    { parse_mode: 'HTML' },
+  )
 
   game.registerTimeoutEvent(
     roomId,
@@ -66,6 +72,13 @@ const checkSendQuestionAvailability: TextMessageFn = async (ctx, next) => {
   if (ctx.chat.type !== 'private') return
 
   if (!game.isHusbandRole(ctx.message.from.id)) return ctx.react('👨‍💻')
+
+  if (ctx.message.text.length > MAX_QUESTION_LENGTH) {
+    return Promise.all([
+      ctx.react('🙈'),
+      ctx.replyWithHTML(t('husband.question.too_long')),
+    ])
+  }
 
   return next()
 }
