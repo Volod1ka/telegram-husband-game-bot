@@ -2,17 +2,13 @@ import { configure, makeAutoObservable } from 'mobx'
 import FeedbackStore from './FeedbackStore'
 
 export class RootStore {
-  private _feedbackStore: FeedbackStore
+  readonly feedbackStore: FeedbackStore
 
   constructor() {
     configure({ enforceActions: 'always' })
 
-    this._feedbackStore = new FeedbackStore(this)
+    this.feedbackStore = new FeedbackStore(this)
     makeAutoObservable(this)
-  }
-
-  get feedbackStore() {
-    return this._feedbackStore
   }
 }
 
