@@ -1,5 +1,11 @@
 import { MAX_REGISTRATION_TIMEOUT, MIN_PARTICIPANTS_AMOUNT } from '@constants'
-import type { GameRoom, GameStatus, RoomEvent } from '@models/game'
+import type {
+  CallbackEvent,
+  GameRoom,
+  GameStatus,
+  RemindEvent,
+  RoomEvent,
+} from '@models/game'
 import type { Participant } from '@models/roles'
 import type { Chat, MessageId, User } from '@telegraf/types'
 import { getRandomRange, getRandomToValue } from '@tools/math'
@@ -31,23 +37,47 @@ export class GameEngine {
     return this._rooms
   }
 
+  private setupTimeoutEvent(chatId: Chat['id'], timeoutMs: number) {
+    const event = this._events.get(chatId)
+
+    if (!event) return null
+
+    return setTimeout(async () => {
+      if (event.reminder) {
+        event.timeout = setTimeout(async () => {
+          await event.callback()
+          this.unregisterTimeoutEvent(chatId)
+        }, event.reminder.timeoutMs)
+        event.timeout.ref()
+
+        await event.reminder.callback()
+      } else {
+        await event.callback()
+        this.unregisterTimeoutEvent(chatId)
+      }
+    }, timeoutMs)
+  }
+
   registerTimeoutEvent(
     chatId: Chat['id'],
-    callback: () => Promise<void>,
-    ms: number,
+    callback: CallbackEvent,
+    timeoutMs: number,
+    remind?: RemindEvent,
   ) {
     const event = this._events.get(chatId)
 
     if (!event || !event.dateExtended) return
 
+    const remainingTime = remind ? timeoutMs - remind.timeoutMs : timeoutMs
+
+    event.reminder = remind
+    event.callback = callback
     event.dateExtended = false
     event.startDate = Date.now()
-    event.timeoutMs = ms
-    event.timeout = setTimeout(async () => {
-      this.unregisterTimeoutEvent(chatId)
-      await callback()
-    }, ms)
-    event.timeout.ref()
+    event.timeoutMs = timeoutMs
+
+    event.timeout = this.setupTimeoutEvent(chatId, remainingTime)
+    event.timeout?.ref()
   }
 
   unregisterTimeoutEvent(chatId: Chat['id']) {
@@ -55,6 +85,8 @@ export class GameEngine {
 
     if (!event?.timeout) return
 
+    event.reminder = undefined
+    event.callback = async () => {}
     event.dateExtended = true
     event.startDate = 0
     event.timeoutMs = 0
@@ -62,33 +94,32 @@ export class GameEngine {
     event.timeout = null
   }
 
-  extendRegistrationTimeout(
-    chatId: Chat['id'],
-    callback: () => Promise<void>,
-    extendMs: number,
-  ): number {
+  extendRegistrationTimeout(chatId: Chat['id'], extendMs: number): number {
     const event = this._events.get(chatId)
 
     if (!event) return 0
 
-    const difference = Date.now() - event.startDate
+    const elapsed = Date.now() - event.startDate
     event.timeoutMs += extendMs
-    const remainsTime = Math.min(
-      event.timeoutMs - difference,
+    const newTimeoutMs = Math.min(
+      event.timeoutMs - elapsed,
       MAX_REGISTRATION_TIMEOUT,
     )
+    const remainingTime = event.reminder
+      ? newTimeoutMs - event.reminder.timeoutMs
+      : newTimeoutMs
 
-    if (event.dateExtended || difference >= event.timeoutMs) return 0
+    if (event.dateExtended || elapsed >= event.timeoutMs) {
+      this.unregisterTimeoutEvent(chatId)
+      return 0
+    }
 
     if (event.timeout) clearTimeout(event.timeout)
 
-    event.timeout = setInterval(async () => {
-      this.unregisterTimeoutEvent(chatId)
-      await callback()
-    }, remainsTime)
-    event.timeout.ref()
+    event.timeout = this.setupTimeoutEvent(chatId, remainingTime)
+    event.timeout?.ref()
 
-    return remainsTime
+    return remainingTime
   }
 
   getRoomStatus(chatId: Chat['id']): GameStatus | null {

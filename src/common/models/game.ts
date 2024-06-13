@@ -37,7 +37,16 @@ export type GameRoom = {
   participants: Map<User['id'], Participant>
 }
 
+export type CallbackEvent = () => Promise<void>
+
+export type RemindEvent = {
+  callback: CallbackEvent
+  timeoutMs: number
+}
+
 export type RoomEvent = {
+  reminder?: RemindEvent
+  callback: CallbackEvent
   timeout: NodeJS.Timeout | null
   startDate: number
   dateExtended: boolean

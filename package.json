@@ -1,6 +1,6 @@
 {
   "name": "husband-game-bot",
-  "version": "0.1.0beta",
+  "version": "0.2.0beta",
   "private": true,
   "license": "MIT",
   "dependencies": {

@@ -19,7 +19,7 @@ const DEV = false
 export const MAX_SHOWN_USER_NAME_LENGTH = 20
 
 export const ELIMINATION_SKIPS_AMOUNT = 1
-export const MIN_PARTICIPANTS_AMOUNT = 4
+export const MIN_PARTICIPANTS_AMOUNT = DEV ? 2 : 4
 export const MAX_PARTICIPANTS_AMOUNT = 15
 
 export const MAX_ANSWER_LENGTH = 420
@@ -29,11 +29,14 @@ export const MAX_HUSBAND_MESSAGE_LENGTH = 360
 export const REGISTRATION_TIMEOUT = ms(DEV ? '20s' : '1m')
 export const MAX_REGISTRATION_TIMEOUT = ms('3m')
 export const EXTEND_REGISTRATION_TIMEOUT = ms('30s')
-export const CLEAR_EXTEND_REGISTRATION_TIMEOUT = ms('7s')
 export const ACCEPT_HUSBAND_ROLE_TIMEOUT = ms(DEV ? '20s' : '40s')
 export const QUESTION_TIMEOUT = ms(DEV ? '20s' : '4m')
 export const ANSWERS_TIMEOUT = ms(DEV ? '50s' : '5m')
 export const ELIMINATION_TIMEOUT = ms(DEV ? '20s' : '10m')
+
+export const AUTO_CLEAR_MESSAGE_TIMEOUT = ms('7s')
+
+export const REGISTRATION_REMIND_TIMEOUT = ms('10s')
 
 // ------- [ default data ] ------- //
 export const TELEGRAM_LINK = 'https://t.me/'
@@ -54,9 +57,10 @@ export const DEFAULT_GAME_ROOM: GameRoom = {
 } satisfies GameRoom
 
 export const EMPTY_ROOM_EVENT: RoomEvent = {
-  dateExtended: true,
-  startDate: 0,
+  callback: async () => {},
   timeout: null,
+  startDate: 0,
+  dateExtended: true,
   timeoutMs: 0,
 } satisfies RoomEvent
 

@@ -1,17 +1,19 @@
 import {
+  AUTO_CLEAR_MESSAGE_TIMEOUT,
   BOT_ACTIONS,
   BOT_COMMANDS,
-  CLEAR_EXTEND_REGISTRATION_TIMEOUT,
   EXTEND_REGISTRATION_TIMEOUT,
   INLINE_KEYBOARD_PARTICIPATE,
   MAX_PARTICIPANTS_AMOUNT,
   MIN_PARTICIPANTS_AMOUNT,
   PARTICIPATE_CALLBACK_ANSWERS,
+  REGISTRATION_REMIND_TIMEOUT,
   REGISTRATION_TIMEOUT,
   SCENES,
 } from '@constants'
 import game from '@game/engine'
 import { t } from '@i18n'
+import type { MessageId } from '@telegraf/types'
 import {
   mentionWithHTML,
   mentionsOfParticipants,
@@ -27,6 +29,28 @@ import type {
   ContextFn,
   NextContext,
 } from '../context'
+
+// ------- [ utility functions ] ------- //
+
+const autoClearMessage = (
+  ctx: BotContext,
+  messageId: MessageId['message_id'],
+) => {
+  const timeout = setTimeout(() => {
+    ctx.deleteMessage(messageId).catch(error => handleCatch(error, ctx))
+    clearTimeout(timeout)
+  }, AUTO_CLEAR_MESSAGE_TIMEOUT)
+}
+
+const registrationRemind = async (ctx: BotContext) => {
+  const { message_id } = await ctx.replyWithHTML(
+    t('start_game.remind_timeout', {
+      time: remainsTime(undefined, REGISTRATION_REMIND_TIMEOUT),
+    }),
+  )
+
+  autoClearMessage(ctx, message_id)
+}
 
 // ------- [ bot context ] ------- //
 
@@ -171,6 +195,12 @@ const handleStartGame: CommandFn = async (ctx, next) => {
         await completeRegistration(ctx, next)
       },
       REGISTRATION_TIMEOUT,
+      {
+        callback: async () => {
+          await registrationRemind(ctx)
+        },
+        timeoutMs: REGISTRATION_REMIND_TIMEOUT,
+      },
     )
   }
 }
@@ -213,9 +243,6 @@ const handleExtendGame: CommandFn = async (ctx, next) => {
 
   const remains = game.extendRegistrationTimeout(
     ctx.chat.id,
-    async () => {
-      await completeRegistration(ctx, next)
-    },
     EXTEND_REGISTRATION_TIMEOUT,
   )
 
@@ -228,10 +255,7 @@ const handleExtendGame: CommandFn = async (ctx, next) => {
     }),
   )
 
-  const timeout = setTimeout(() => {
-    ctx.deleteMessage(message_id).catch(error => handleCatch(error, ctx))
-    clearTimeout(timeout)
-  }, CLEAR_EXTEND_REGISTRATION_TIMEOUT)
+  autoClearMessage(ctx, message_id)
 }
 
 // ------- [ action ] ------- //
