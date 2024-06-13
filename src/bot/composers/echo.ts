@@ -1,4 +1,7 @@
-import { INLINE_KEYBOARD_INVITE_CHAT } from '@constants'
+import {
+  AUTO_CLEAR_MESSAGE_TIMEOUT,
+  INLINE_KEYBOARD_INVITE_CHAT,
+} from '@constants'
 import game from '@game/engine'
 import { t } from '@i18n'
 import { mentionWithHTML } from '@tools/formatting'
@@ -40,9 +43,14 @@ const handleHelpCommand: TextMessageFn = async ctx => {
 // ------- [ reactions ] ------- //
 
 const handleReaction: MessageReactionFn = async ctx => {
-  await ctx.replyWithHTML(
+  const { message_id } = await ctx.replyWithHTML(
     t('reaction.fuck', { user: mentionWithHTML(ctx.from) }),
   )
+
+  const timeout = setTimeout(async () => {
+    await ctx.deleteMessage(message_id).catch(error => handleCatch(error, ctx))
+    clearTimeout(timeout)
+  }, AUTO_CLEAR_MESSAGE_TIMEOUT)
 }
 
 // ------- [ composer ] ------- //
