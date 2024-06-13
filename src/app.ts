@@ -1,11 +1,12 @@
 import 'module-alias/register'
 
 import bot from '@bot'
+import { ALLOWED_UPDATES } from '@constants'
 import type { Telegraf } from 'telegraf'
 
 const launchOptions: Telegraf.LaunchOptions = {
   dropPendingUpdates: true,
-  allowedUpdates: ['message', 'callback_query', 'my_chat_member'],
+  allowedUpdates: ALLOWED_UPDATES,
 }
 
 bot.launch(launchOptions, () => {

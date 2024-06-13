@@ -11,6 +11,7 @@ import type {
 import { remainsTime } from '@tools/formatting'
 import ms from 'ms'
 import { Markup } from 'telegraf'
+import type { UpdateType } from 'telegraf/typings/telegram-types'
 
 // ------- [ properties ] ------- //
 
@@ -39,6 +40,7 @@ export const AUTO_CLEAR_MESSAGE_TIMEOUT = ms('7s')
 export const REGISTRATION_REMIND_TIMEOUT = ms('10s')
 
 // ------- [ default data ] ------- //
+
 export const TELEGRAM_LINK = 'https://t.me/'
 export const TELEGRAM_MESSAGE_LINK = `${TELEGRAM_LINK}c/`
 export const TELEGRAM_MENTION = 'tg://user?id='
@@ -98,6 +100,13 @@ export const DEFAULT_ADMINISTRATOR_RIGHTS: ChatAdministratorRights = {
   is_anonymous: false,
   can_pin_messages: true,
 } satisfies ChatAdministratorRights
+
+export const ALLOWED_UPDATES: UpdateType[] = [
+  'message',
+  'callback_query',
+  'my_chat_member',
+  'message_reaction',
+] satisfies UpdateType[]
 
 // ------- [ scenes name ] ------- //
 

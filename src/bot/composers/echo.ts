@@ -4,7 +4,7 @@ import { t } from '@i18n'
 import { mentionWithHTML } from '@tools/formatting'
 import { getRandomEmoji, handleCatch } from '@tools/utils'
 import { Composer } from 'telegraf'
-import type { BotContext, TextMessageFn } from '../context'
+import type { BotContext, MessageReactionFn, TextMessageFn } from '../context'
 
 // ------- [ text message ] ------- //
 
@@ -37,11 +37,20 @@ const handleHelpCommand: TextMessageFn = async ctx => {
   ])
 }
 
+// ------- [ reactions ] ------- //
+
+const handleReaction: MessageReactionFn = async ctx => {
+  await ctx.replyWithHTML(
+    t('reaction.fuck', { user: mentionWithHTML(ctx.from) }),
+  )
+}
+
 // ------- [ composer ] ------- //
 
 const composer = new Composer<BotContext>()
 
 composer.start(handleStartCommand)
 composer.help(handleHelpCommand)
+composer.reaction(['🖕'], handleReaction)
 
 export default composer
