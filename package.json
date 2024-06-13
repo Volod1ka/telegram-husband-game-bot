@@ -2,6 +2,7 @@
   "name": "husband-game-bot",
   "version": "0.2.0beta",
   "private": true,
+  "author": "Volod1ka",
   "license": "MIT",
   "dependencies": {
     "date-fns": "^3.6.0",
@@ -27,7 +28,8 @@
   },
   "scripts": {
     "// --- develop --- //": "",
-    "start": "tsc && ts-node src/app.ts"
+    "start:development": "tsc && NODE_ENV=development ts-node src/app.ts",
+    "start:production": "tsc && NODE_ENV=production ts-node src/app.ts"
   },
   "eslintConfig": {
     "extends": "universe/node"

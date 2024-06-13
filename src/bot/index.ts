@@ -21,6 +21,11 @@ const stage = new Scenes.Stage<BotContext>(allScenes, {
 
 const sessionOptions = { getSessionKey } satisfies SessionOptions
 
+// TODO: maybe remove
+if (Config.ENV === 'development') {
+  bot.use(Telegraf.log())
+}
+
 bot.use(session(sessionOptions))
 bot.use(settingsComposer)
 bot.use(permissionsComposer)
