@@ -21,6 +21,8 @@
     "allowSyntheticDefaultImports": true,
     "noFallthroughCasesInSwitch": true,
     "baseUrl": "src",
+    "outDir": "build",
+    "declaration": true,
     "paths": {
       "@bot": ["bot/index"],
       "@config": ["common/tools/config"],

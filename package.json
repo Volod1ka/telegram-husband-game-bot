@@ -26,10 +26,12 @@
     "typescript": "^5.4.5",
     "typescript-eslint": "^7.7.1"
   },
+  "main": "build/app.js",
+  "types": "build/app.d.ts",
   "scripts": {
     "// --- develop --- //": "",
     "start:development": "tsc && NODE_ENV=development ts-node src/app.ts",
-    "start:production": "tsc && NODE_ENV=production ts-node src/app.ts"
+    "start:production": "tsc --noEmit false && NODE_ENV=production ts-node --transpile-only build/app.js"
   },
   "eslintConfig": {
     "extends": "universe/node"
