@@ -8,7 +8,7 @@ import game from '@game/engine'
 import { t } from '@i18n'
 import type { Chat, User } from '@telegraf/types'
 import { capitalizeFirstLetter } from '@tools/formatting'
-import { getRandomEmoji, logHandleError } from '@tools/utils'
+import { getRandomEmoji, logHandleError, logHandleInfo } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import { message } from 'telegraf/filters'
 import type {
@@ -36,6 +36,7 @@ const handleTimeoutEvent = async (
 
   game.completeHusbandQuestion(chatId, true)
 
+  logHandleInfo(t('log.game.over.not_question', { chat_id: chatId }), ctx)
   await ctx.scene.enter(SCENES.finished)
 }
 
@@ -104,6 +105,7 @@ const handleSendQuestion: TextMessageFn = async ctx => {
   game.setQuestionByHasband(userId, message_id)
   game.completeHusbandQuestion(roomId)
 
+  logHandleInfo(t('log.game.over.not_question', { chat_id: roomId }), ctx)
   await ctx.scene.enter(SCENES.answers)
 }
 

@@ -122,7 +122,17 @@ export const logHandleError = (error: unknown, ctx: BotContext) => {
       ? error
       : JSON.stringify(error, null, 2).replaceAll('\n', '\n| ')
 
-  console.groupCollapsed(`\n${date} ≈> error:`)
+  console.groupCollapsed(`\n${date} ≈> ⛔ error:`)
   console.log(`| chat: ${chat}\n| from: ${from}\n|\n| details: ${details}\n`)
+  console.groupEnd()
+}
+
+export const logHandleInfo = (message: string, ctx: BotContext) => {
+  const date = format(toDate(Date.now()), '[dd/MM/yyyy – kk:mm:ss]')
+  const chat = JSON.stringify(ctx.chat)
+  const from = JSON.stringify(ctx.from)
+
+  console.groupCollapsed(`\n${date} ≈> ℹ️ info:`)
+  console.log(`| chat: ${chat}\n| from: ${from}\n|\n| details: ${message}\n`)
   console.groupEnd()
 }

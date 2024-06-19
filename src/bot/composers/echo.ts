@@ -4,10 +4,23 @@ import {
 } from '@constants'
 import game from '@game/engine'
 import { t } from '@i18n'
+import type { MessageId } from '@telegraf/types'
 import { mentionWithHTML } from '@tools/formatting'
 import { getRandomEmoji, handleCatch } from '@tools/utils'
 import { Composer } from 'telegraf'
 import type { BotContext, MessageReactionFn, TextMessageFn } from '../context'
+
+// ------- [ utility functions ] ------- //
+
+const autoClearMessage = (
+  ctx: BotContext,
+  messageId: MessageId['message_id'],
+) => {
+  const timeout = setTimeout(async () => {
+    await ctx.deleteMessage(messageId).catch(error => handleCatch(error, ctx))
+    clearTimeout(timeout)
+  }, AUTO_CLEAR_MESSAGE_TIMEOUT)
+}
 
 // ------- [ text message ] ------- //
 
@@ -47,10 +60,7 @@ const handleReaction: MessageReactionFn = async ctx => {
     t('reaction.fuck', { user: mentionWithHTML(ctx.from) }),
   )
 
-  const timeout = setTimeout(async () => {
-    await ctx.deleteMessage(message_id).catch(error => handleCatch(error, ctx))
-    clearTimeout(timeout)
-  }, AUTO_CLEAR_MESSAGE_TIMEOUT)
+  autoClearMessage(ctx, message_id)
 }
 
 // ------- [ composer ] ------- //

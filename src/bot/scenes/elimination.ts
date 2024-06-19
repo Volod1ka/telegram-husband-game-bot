@@ -9,7 +9,7 @@ import { t } from '@i18n'
 import type { Participant } from '@models/roles'
 import type { Chat, MessageId, User } from '@telegraf/types'
 import { mentionWithHTML } from '@tools/formatting'
-import { getRandomText, handleCatch } from '@tools/utils'
+import { getRandomText, handleCatch, logHandleInfo } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import { callbackQuery } from 'telegraf/filters'
 import type {
@@ -120,6 +120,7 @@ const handleAllAFKElimination = async (ctx: BotContext, chatId: Chat['id']) => {
 
   game.completeElimination(chatId, true)
 
+  logHandleInfo(t('log.game.over.not_question', { chat_id: chatId }), ctx)
   await sendMessage(ctx, chatId, textMessage, replyId)
   await ctx.scene.enter(SCENES.finished)
 }
@@ -141,6 +142,7 @@ const handleSingleWinnerElimination = async (
 
   game.completeElimination(chatId, true)
 
+  logHandleInfo(t('log.game.over.one_remained', { chat_id: chatId }), ctx)
   await sendMessage(ctx, chatId, textMessage, replyId)
   await ctx.scene.enter(SCENES.finished)
 }
@@ -199,6 +201,8 @@ const handleElimination = async (
         eliminationMessage = t('elimination.final.all_afk', {
           husband: mentionWithHTML(husband.user),
         })
+
+        logHandleInfo(t('log.game.over.all_afk', { chat_id: chatId }), ctx)
       } else {
         const firstMember = members[0][1]
         const eliminatedText = getRandomText(
@@ -218,6 +222,8 @@ const handleElimination = async (
               t('comments.union', { returnObjects: true }),
             ),
           })
+
+          logHandleInfo(t('log.game.over.complete', { chat_id: chatId }), ctx)
         } else {
           eliminationMessage = t('elimination.accept', {
             number: eliminatedMember.number,

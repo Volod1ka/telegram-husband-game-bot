@@ -7,6 +7,7 @@ import {
 import game from '@game/engine'
 import { t } from '@i18n'
 import type { Chat, Message, User } from '@telegraf/types'
+import { handleCatch } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import type { ActionFn, BotContext } from '../context'
 
@@ -18,15 +19,15 @@ const handleTimeoutEvent = async (
   messageId: Message['message_id'],
 ) => {
   await Promise.all([
-    ctx.telegram.editMessageText(
-      userId,
-      messageId,
-      undefined,
-      t('husband.afk_deny_role'),
-      {
-        parse_mode: 'HTML',
-      },
-    ),
+    ctx.telegram
+      .editMessageText(
+        userId,
+        messageId,
+        undefined,
+        t('husband.afk_deny_role'),
+        { parse_mode: 'HTML' },
+      )
+      .catch(error => handleCatch(error, ctx)),
     handlePickHusbandRole(ctx, false),
   ])
 }
@@ -109,6 +110,7 @@ const handlePickHusbandRole = async (ctx: BotContext, accepted: boolean) => {
       return completeHusbandSearch(ctx, roomId)
     case 'deny': {
       const allCanceled = game.allСanceledHusbandRole(roomId)
+
       if (!allCanceled) {
         return searchHusband(ctx)
       }
@@ -117,10 +119,17 @@ const handlePickHusbandRole = async (ctx: BotContext, accepted: boolean) => {
 
       game.acceptHusbandRole(roomId, user, true)
 
-      await ctx.telegram.sendMessage(husbandId, t('husband.random_role'), {
-        parse_mode: 'HTML',
-      })
-      return completeHusbandSearch(ctx, roomId)
+      await Promise.all([
+        ctx.telegram
+          .sendDice(husbandId, { emoji: '🎲' })
+          .catch(error => handleCatch(error, ctx)),
+        ctx.telegram
+          .sendMessage(husbandId, t('husband.random_role'), {
+            parse_mode: 'HTML',
+          })
+          .catch(error => handleCatch(error, ctx)),
+        completeHusbandSearch(ctx, roomId),
+      ])
     }
   }
 }

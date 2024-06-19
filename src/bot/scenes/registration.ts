@@ -19,7 +19,7 @@ import {
   mentionsOfParticipants,
   remainsTime,
 } from '@tools/formatting'
-import { handleCatch } from '@tools/utils'
+import { handleCatch, logHandleInfo } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import type {
   ActionFn,
@@ -36,8 +36,8 @@ const autoClearMessage = (
   ctx: BotContext,
   messageId: MessageId['message_id'],
 ) => {
-  const timeout = setTimeout(() => {
-    ctx.deleteMessage(messageId).catch(error => handleCatch(error, ctx))
+  const timeout = setTimeout(async () => {
+    await ctx.deleteMessage(messageId).catch(error => handleCatch(error, ctx))
     clearTimeout(timeout)
   }, AUTO_CLEAR_MESSAGE_TIMEOUT)
 }
@@ -102,6 +102,7 @@ const completeRegistration: ContextFn = async ctx => {
   }
 
   if (roomStatus === 'next_status') {
+    logHandleInfo(t('log.game.start', { chat_id: chatId }), ctx)
     await ctx.scene.enter(SCENES.search_husband)
   }
 }

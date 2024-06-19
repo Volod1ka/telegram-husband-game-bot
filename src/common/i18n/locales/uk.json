@@ -224,5 +224,16 @@
   },
   "reaction": {
     "fuck": "Ай-яй-яй, {{ user }}… Як не гарно так тикати <b>факами</b>!"
+  },
+  "log": {
+    "game": {
+      "start": "[ {{ chat_id }}] the game has begun",
+      "over": {
+        "complete": "[ {{ chat_id }}] game over",
+        "not_question": "[ {{ chat_id }}] game over: husband no questions",
+        "all_afk": "[ {{ chat_id }}] game over: none of the participants has an answer",
+        "one_remained": "[ {{ chat_id }}] game over: only one of the participants has an answer"
+      }
+    }
   }
 }

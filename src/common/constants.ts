@@ -1,3 +1,4 @@
+import Config from '@config'
 import type { AddParticipantToRoomStatus } from '@game/types'
 import { t } from '@i18n'
 import type { ActionTrigger, BotCommand, CommandTrigger } from '@models/bot'
@@ -15,7 +16,7 @@ import type { UpdateType } from 'telegraf/typings/telegram-types'
 
 // ------- [ properties ] ------- //
 
-const DEV = false
+const DEV = Config.ENV === 'development'
 
 export const MAX_SHOWN_USER_NAME_LENGTH = 20
 
@@ -29,9 +30,9 @@ export const MAX_HUSBAND_MESSAGE_LENGTH = 360
 
 export const REGISTRATION_TIMEOUT = ms(DEV ? '20s' : '1m')
 export const MAX_REGISTRATION_TIMEOUT = ms('3m')
-export const EXTEND_REGISTRATION_TIMEOUT = ms('30s')
+export const EXTEND_REGISTRATION_TIMEOUT = ms(DEV ? '30s' : '1m')
 export const ACCEPT_HUSBAND_ROLE_TIMEOUT = ms(DEV ? '20s' : '40s')
-export const QUESTION_TIMEOUT = ms(DEV ? '20s' : '4m')
+export const QUESTION_TIMEOUT = ms(DEV ? '30s' : '4m')
 export const ANSWERS_TIMEOUT = ms(DEV ? '50s' : '5m')
 export const ELIMINATION_TIMEOUT = ms(DEV ? '20s' : '10m')
 
