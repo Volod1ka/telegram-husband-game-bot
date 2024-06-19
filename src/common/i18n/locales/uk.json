@@ -227,6 +227,8 @@
   },
   "log": {
     "game": {
+      "registration": "[ {{ chat_id }}] registration started",
+      "stop": "[ {{ chat_id }}] registration is suspended",
       "start": "[ {{ chat_id }}] the game has begun",
       "over": {
         "complete": "[ {{ chat_id }}] game over",

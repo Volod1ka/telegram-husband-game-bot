@@ -181,6 +181,7 @@ const checkStopGameAvailability: CommandFn = async (ctx, next) => {
 }
 
 const handleStartGame: CommandFn = async (ctx, next) => {
+  const chatId = ctx.chat.id
   const { message_id } = await ctx.replyWithHTML(
     t('start_game.base', { ctx }),
     INLINE_KEYBOARD_PARTICIPATE(ctx.botInfo.username),
@@ -189,9 +190,9 @@ const handleStartGame: CommandFn = async (ctx, next) => {
   await ctx.pinChatMessage(message_id)
   await ctx.deleteMessage(message_id + 1)
 
-  if (game.setMessageForRegistration(ctx.chat.id, ctx.from, message_id)) {
+  if (game.setMessageForRegistration(chatId, ctx.from, message_id)) {
     game.registerTimeoutEvent(
-      ctx.chat.id,
+      chatId,
       async () => {
         await completeRegistration(ctx, next)
       },
@@ -204,6 +205,8 @@ const handleStartGame: CommandFn = async (ctx, next) => {
       },
     )
   }
+
+  logHandleInfo(t('log.game.registration', { chat_id: chatId }), ctx)
 }
 
 const handleStartGameNow: CommandFn = async (ctx, next) => {
@@ -232,6 +235,7 @@ const handleStopGame: CommandFn = async ctx => {
     await ctx.replyWithHTML(textMessage)
   }
 
+  logHandleInfo(t('log.game.stop', { chat_id: chatId }), ctx)
   game.closeRoom(chatId)
 }
 
