@@ -30,7 +30,7 @@ export const MAX_HUSBAND_MESSAGE_LENGTH = 360
 
 export const REGISTRATION_TIMEOUT = ms(DEV ? '20s' : '1m')
 export const MAX_REGISTRATION_TIMEOUT = ms('3m')
-export const EXTEND_REGISTRATION_TIMEOUT = ms(DEV ? '30s' : '1m')
+export const EXTEND_REGISTRATION_TIMEOUT = ms(DEV ? '30s' : '40s')
 export const ACCEPT_HUSBAND_ROLE_TIMEOUT = ms(DEV ? '20s' : '40s')
 export const QUESTION_TIMEOUT = ms(DEV ? '30s' : '4m')
 export const ANSWERS_TIMEOUT = ms(DEV ? '50s' : '5m')
