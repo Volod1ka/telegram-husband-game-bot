@@ -1,1 +1,1 @@
-# husband-game-bot
+# Husband game Telegram bot
