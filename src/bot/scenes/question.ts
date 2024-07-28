@@ -105,7 +105,6 @@ const handleSendQuestion: TextMessageFn = async ctx => {
   game.setQuestionByHasband(userId, message_id)
   game.completeHusbandQuestion(roomId)
 
-  logHandleInfo(t('log.game.over.not_question', { chat_id: roomId }), ctx)
   await ctx.scene.enter(SCENES.answers)
 }
 
