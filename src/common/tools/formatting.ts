@@ -7,7 +7,7 @@ import {
 import { t } from '@i18n'
 import type { GameRoom } from '@models/game'
 import type { Participant } from '@models/roles'
-import type { User } from '@telegraf/types'
+import type { Chat, User } from '@telegraf/types'
 import { formatDuration, intervalToDuration } from 'date-fns'
 import { uk } from 'date-fns/locale'
 import { getRandomText } from './utils'
@@ -27,7 +27,15 @@ export const shortNameParticipant = ({ first_name }: User) => {
 }
 
 export const mentionWithHTML = (user: User) => {
-  return `<a href="${TELEGRAM_MENTION}${user.id}">${shortNameParticipant(user)}</a>`
+  return `<a href="${TELEGRAM_MENTION}${user.id}">${formattedTextForHTML(shortNameParticipant(user))}</a>`
+}
+
+export const formattedTextForHTML = (text: string) => {
+  return text.replaceAll('<', '&lt;')
+}
+
+export const formattedChatTitleForHTML = (chat: Chat) => {
+  return chat.type !== 'private' ? formattedTextForHTML(chat.title) : ''
 }
 
 export const mentionsOfParticipants = (

@@ -7,7 +7,7 @@ import {
 import game from '@game/engine'
 import { t } from '@i18n'
 import type { Chat, User } from '@telegraf/types'
-import { capitalizeFirstLetter } from '@tools/formatting'
+import { capitalizeFirstLetter, formattedTextForHTML } from '@tools/formatting'
 import { getRandomEmoji, logHandleError, logHandleInfo } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import { message } from 'telegraf/filters'
@@ -88,7 +88,7 @@ const handleSendQuestion: TextMessageFn = async ctx => {
   const userId = ctx.message.from.id
   const [roomId] = game.getRoomOfUser(userId)!
   const textMessage = t('husband.send_question', {
-    question: capitalizeFirstLetter(ctx.message.text),
+    question: capitalizeFirstLetter(formattedTextForHTML(ctx.message.text)),
   })
 
   game.unregisterTimeoutEvent(roomId)

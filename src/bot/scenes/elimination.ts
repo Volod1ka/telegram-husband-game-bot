@@ -8,7 +8,7 @@ import game from '@game/engine'
 import { t } from '@i18n'
 import type { Participant } from '@models/roles'
 import type { Chat, MessageId, User } from '@telegraf/types'
-import { mentionWithHTML } from '@tools/formatting'
+import { formattedTextForHTML, mentionWithHTML } from '@tools/formatting'
 import { getRandomText, handleCatch, logHandleInfo } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import { callbackQuery } from 'telegraf/filters'
@@ -27,7 +27,7 @@ const sendMessage = async (
   message: string,
   replyId?: MessageId['message_id'],
 ) => {
-  return ctx.telegram.sendMessage(chatId, message, {
+  return ctx.telegram.sendMessage(chatId, formattedTextForHTML(message), {
     parse_mode: 'HTML',
     reply_parameters: replyId
       ? { message_id: replyId, allow_sending_without_reply: true }
@@ -42,9 +42,15 @@ const editMessageText = async (
   message: string,
 ) => {
   try {
-    await ctx.telegram.editMessageText(userId, messageId, undefined, message, {
-      parse_mode: 'HTML',
-    })
+    await ctx.telegram.editMessageText(
+      userId,
+      messageId,
+      undefined,
+      formattedTextForHTML(message),
+      {
+        parse_mode: 'HTML',
+      },
+    )
   } catch (error) {
     handleCatch(error, ctx)
     await sendMessage(ctx, userId, message)

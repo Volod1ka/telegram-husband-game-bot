@@ -1,7 +1,11 @@
 import { SCENES } from '@constants'
 import game from '@game/engine'
 import { t } from '@i18n'
-import { mentionWithHTML, remainsTime } from '@tools/formatting'
+import {
+  formattedChatTitleForHTML,
+  mentionWithHTML,
+  remainsTime,
+} from '@tools/formatting'
 import { createMessageLink, handleCatch } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import type { BotContext, ContextFn } from '../context'
@@ -17,9 +21,10 @@ const finishGame: ContextFn = async ctx => {
 
   const [roomId, { startDate, participants }] = currentRoom
   const chat = await ctx.telegram.getChat(roomId)
+  const chatTitle = formattedChatTitleForHTML(chat)
 
   const roomMessage = t('finished.chat', {
-    chat,
+    chat_title: chatTitle,
     time: remainsTime(startDate, Date.now()),
   })
 
@@ -32,7 +37,7 @@ const finishGame: ContextFn = async ctx => {
       .sendMessage(
         participantId,
         t('finished.personal', {
-          chat,
+          chat_title: chatTitle,
           user: mentionWithHTML(user),
           link: createMessageLink(chat.id, message_id),
         }),

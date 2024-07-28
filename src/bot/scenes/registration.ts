@@ -15,6 +15,7 @@ import game from '@game/engine'
 import { t } from '@i18n'
 import type { MessageId } from '@telegraf/types'
 import {
+  formattedChatTitleForHTML,
   mentionWithHTML,
   mentionsOfParticipants,
   remainsTime,
@@ -58,6 +59,7 @@ const completeRegistration: ContextFn = async ctx => {
   if (!ctx.chat || ctx.chat.type === 'private') return
 
   const chatId = ctx.chat.id
+  const chatTitle = formattedChatTitleForHTML(ctx.chat)
   const currentRoom = game.allRooms.get(chatId)
   const roomStatus = game.completeRegistration(chatId)
 
@@ -81,7 +83,7 @@ const completeRegistration: ContextFn = async ctx => {
       })
       break
     case 'next_status':
-      textMessage = t('start_game.next_status', { ctx })
+      textMessage = t('start_game.next_status', { chat_title: chatTitle })
       break
   }
 
@@ -124,7 +126,7 @@ const checkStartGameAvailability: CommandFn = async (ctx, next) => {
       registration!.creatorId,
     )
     const textMessage = t('start_game.room_is_created', {
-      ctx,
+      chat_title: formattedChatTitleForHTML(ctx.chat),
       creator: mentionWithHTML(creator),
     })
 
@@ -163,7 +165,7 @@ const checkGameAvailability = async (
 
   const actionText = action === 'start_now' ? 'start_game_now' : 'stop_game'
   const textMessage = t(`${actionText}.not_creator_or_admin`, {
-    ctx,
+    chat_title: formattedChatTitleForHTML(ctx.chat),
     creator: mentionWithHTML(creator),
   })
 
@@ -183,7 +185,7 @@ const checkStopGameAvailability: CommandFn = async (ctx, next) => {
 const handleStartGame: CommandFn = async (ctx, next) => {
   const chatId = ctx.chat.id
   const { message_id } = await ctx.replyWithHTML(
-    t('start_game.base', { ctx }),
+    t('start_game.base', { chat_title: formattedChatTitleForHTML(ctx.chat) }),
     INLINE_KEYBOARD_PARTICIPATE(ctx.botInfo.username),
   )
 
@@ -217,7 +219,7 @@ const handleStopGame: CommandFn = async ctx => {
   const chatId = ctx.chat.id
   const { replyId } = game.allRooms.get(chatId)!
   const textMessage = t('stop_game.base', {
-    ctx,
+    chat_title: formattedChatTitleForHTML(ctx.chat),
     user: mentionWithHTML(ctx.from),
   })
 
@@ -285,7 +287,7 @@ const handleParticipate: ActionFn = async (ctx, next) => {
     await ctx.telegram.sendMessage(
       ctx.from.id,
       t('answer_cb.participate.participant_added', {
-        ctx,
+        chat_title: formattedChatTitleForHTML(ctx.chat!),
         user: mentionWithHTML(ctx.from),
       }),
       { parse_mode: 'HTML' },

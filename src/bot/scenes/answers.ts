@@ -8,7 +8,7 @@ import {
 import game from '@game/engine'
 import { t } from '@i18n'
 import type { Chat, MessageId } from '@telegraf/types'
-import { getAnswerOfMembers } from '@tools/formatting'
+import { formattedTextForHTML, getAnswerOfMembers } from '@tools/formatting'
 import { getRandomEmoji } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import { message } from 'telegraf/filters'
@@ -43,17 +43,21 @@ const completeAnswers = async (ctx: BotContext, chatId: Chat['id']) => {
   }
 
   for (const [index, text] of textMessages.entries()) {
-    const { message_id } = await ctx.telegram.sendMessage(chatId, text, {
-      reply_markup:
-        index === textMessages.length - 1
-          ? INLINE_KEYBOARD_CHAT_WITH_BOT(ctx.botInfo.username).reply_markup
-          : undefined,
-      parse_mode: 'HTML',
-      reply_parameters:
-        index === 0 && replyId
-          ? { message_id: replyId, allow_sending_without_reply: true }
-          : undefined,
-    })
+    const { message_id } = await ctx.telegram.sendMessage(
+      chatId,
+      formattedTextForHTML(text),
+      {
+        reply_markup:
+          index === textMessages.length - 1
+            ? INLINE_KEYBOARD_CHAT_WITH_BOT(ctx.botInfo.username).reply_markup
+            : undefined,
+        parse_mode: 'HTML',
+        reply_parameters:
+          index === 0 && replyId
+            ? { message_id: replyId, allow_sending_without_reply: true }
+            : undefined,
+      },
+    )
 
     if (index === 0) {
       replyMessageId = message_id
@@ -130,7 +134,7 @@ const handleSendMessageByHusband: TextMessageFn = async (ctx, next) => {
       ctx.react(getRandomEmoji()),
       ctx.telegram.sendMessage(
         roomId,
-        t('husband.send_message.base', { message: text }),
+        t('husband.send_message.base', { message: formattedTextForHTML(text) }),
         { parse_mode: 'HTML' },
       ),
     ])
