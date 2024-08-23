@@ -26,8 +26,10 @@ export const shortNameParticipant = ({ first_name }: User) => {
     : first_name
 }
 
-export const mentionWithHTML = (user: User) => {
-  return `<a href="${TELEGRAM_MENTION}${user.id}">${formattedTextForHTML(shortNameParticipant(user))}</a>`
+export const mentionWithHTML = (user: User, text: string = '') => {
+  const mentionText = text.length > 0 ? text : shortNameParticipant(user)
+
+  return `<a href="${TELEGRAM_MENTION}${user.id}">${formattedTextForHTML(mentionText)}</a>`
 }
 
 export const formattedTextForHTML = (text: string) => {

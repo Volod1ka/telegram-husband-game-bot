@@ -7,7 +7,11 @@ import {
 import game from '@game/engine'
 import { t } from '@i18n'
 import type { Chat, User } from '@telegraf/types'
-import { capitalizeFirstLetter, formattedTextForHTML } from '@tools/formatting'
+import {
+  capitalizeFirstLetter,
+  formattedTextForHTML,
+  mentionWithHTML,
+} from '@tools/formatting'
 import { getRandomEmoji, logHandleError, logHandleInfo } from '@tools/utils'
 import { Scenes } from 'telegraf'
 import { message } from 'telegraf/filters'
@@ -25,10 +29,16 @@ const handleTimeoutEvent = async (
   chatId: Chat['id'],
   husbandId: User['id'],
 ) => {
+  const [, { user }] = game.getHusbandInGame(chatId)!
+
   await Promise.all([
-    ctx.telegram.sendMessage(chatId, t('husband.question.afk.chat'), {
-      parse_mode: 'HTML',
-    }),
+    ctx.telegram.sendMessage(
+      chatId,
+      t('husband.question.afk.chat', {
+        husband: mentionWithHTML(user, t('husband.name')),
+      }),
+      { parse_mode: 'HTML' },
+    ),
     ctx.telegram.sendMessage(husbandId, t('husband.question.afk.personal'), {
       parse_mode: 'HTML',
     }),
