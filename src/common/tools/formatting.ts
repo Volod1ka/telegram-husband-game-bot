@@ -12,17 +12,25 @@ import { formatDuration, intervalToDuration } from 'date-fns'
 import { uk } from 'date-fns/locale'
 import { getRandomText } from './utils'
 
+export const safeSlice = (
+  text: string,
+  start: number,
+  end?: number,
+): string => {
+  return Array.from(text).slice(start, end).join('')
+}
+
 export const capitalizeFirstLetter = (text: string): string => {
-  return text.charAt(0).toUpperCase() + text.slice(1)
+  return text.charAt(0).toUpperCase() + safeSlice(text, 1)
 }
 
 export const lowercaseFirstLetter = (text: string): string => {
-  return text.charAt(0).toLowerCase() + text.slice(1)
+  return text.charAt(0).toLowerCase() + safeSlice(text, 1)
 }
 
 export const shortNameParticipant = ({ first_name }: User) => {
   return first_name.length > MAX_SHOWN_USER_NAME_LENGTH
-    ? `${first_name.substring(0, MAX_SHOWN_USER_NAME_LENGTH)}…`
+    ? `${safeSlice(first_name, 0, MAX_SHOWN_USER_NAME_LENGTH)}…`
     : first_name
 }
 
