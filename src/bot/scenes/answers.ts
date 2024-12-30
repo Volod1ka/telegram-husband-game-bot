@@ -1,10 +1,10 @@
+import { getInlineKeyboardChatWithBot } from '@constants/inlineKeyboard'
 import {
   ANSWERS_TIMEOUT,
-  INLINE_KEYBOARD_CHAT_WITH_BOT,
   MAX_ANSWER_LENGTH,
   MAX_HUSBAND_MESSAGE_LENGTH,
-  SCENES,
-} from '@constants'
+} from '@constants/properties'
+import { SCENES } from '@constants/scene'
 import game from '@game/engine'
 import { t } from '@i18n'
 import type { Chat, MessageId } from '@telegraf/types'
@@ -35,7 +35,9 @@ const completeAnswers = async (ctx: BotContext, chatId: Chat['id']) => {
   let replyMessageId: MessageId['message_id'] = 0
 
   for (const [memberId, member] of members) {
-    if (!member.afk) continue
+    if (!member.afk) {
+      continue
+    }
 
     await ctx.telegram.sendMessage(memberId, t('member.answer.afk'), {
       parse_mode: 'HTML',
@@ -49,7 +51,7 @@ const completeAnswers = async (ctx: BotContext, chatId: Chat['id']) => {
       {
         reply_markup:
           index === textMessages.length - 1
-            ? INLINE_KEYBOARD_CHAT_WITH_BOT(ctx.botInfo.username).reply_markup
+            ? getInlineKeyboardChatWithBot(ctx.botInfo.username).reply_markup
             : undefined,
         parse_mode: 'HTML',
         reply_parameters:
@@ -72,11 +74,16 @@ const completeAnswers = async (ctx: BotContext, chatId: Chat['id']) => {
 // ------- [ bot context ] ------- //
 
 const requestForAnswers: ContextFn = async ctx => {
-  if (!ctx.from) return ctx.scene.reset()
+  if (!ctx.from) {
+    return ctx.scene.reset()
+  }
 
   const currentRoom = game.getRoomOfUser(ctx.from.id)
 
-  if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
+  if (!currentRoom) {
+    // TODO: Unfortunately, the room could not be created
+    return ctx.scene.reset()
+  }
 
   const [roomId] = currentRoom
   const members = game.getMembersInGame(roomId)
@@ -108,7 +115,9 @@ const requestForAnswers: ContextFn = async ctx => {
 // ------- [ text message ] ------- //
 
 const checkSendTextMessageAvailability: TextMessageFn = async (ctx, next) => {
-  if (ctx.chat.type !== 'private') return
+  if (ctx.chat.type !== 'private') {
+    return
+  }
 
   return next()
 }
@@ -126,7 +135,9 @@ const handleSendMessageByHusband: TextMessageFn = async (ctx, next) => {
 
     const currentRoom = game.getRoomOfUser(from.id)
 
-    if (!currentRoom) return
+    if (!currentRoom) {
+      return
+    }
 
     const [roomId] = currentRoom
 
@@ -156,7 +167,9 @@ const handleSendAnswer: TextMessageFn = async ctx => {
   const answered = game.setAnswerByMember(from.id, text)
   const currentRoom = game.getRoomOfUser(from.id)
 
-  if (!answered || !currentRoom) return
+  if (!answered || !currentRoom) {
+    return
+  }
 
   await ctx.react(getRandomEmoji())
 

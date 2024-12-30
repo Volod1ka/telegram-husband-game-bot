@@ -1,5 +1,5 @@
 import Config from '@config'
-import { SCENES } from '@constants'
+import { SCENES } from '@constants/scene'
 import { getSessionKey, logHandleError } from '@tools/utils'
 import { Scenes, Telegraf, session } from 'telegraf'
 import {
@@ -38,5 +38,5 @@ export default bot
 
 // TODO: set languale
 // ctx.reply(t('hi.text', { lng: 'en' satisfies Language }))
-// ctx.sendDice({})
+// TODO: send chat action
 // ctx.sendChatAction('typing')

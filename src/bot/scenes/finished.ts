@@ -1,4 +1,4 @@
-import { SCENES } from '@constants'
+import { SCENES } from '@constants/scene'
 import game from '@game/engine'
 import { t } from '@i18n'
 import {
@@ -13,11 +13,16 @@ import type { BotContext, ContextFn } from '../context'
 // ------- [ bot context ] ------- //
 
 const finishGame: ContextFn = async ctx => {
-  if (!ctx.from) return ctx.scene.reset()
+  if (!ctx.from) {
+    return ctx.scene.reset()
+  }
 
   const currentRoom = game.getRoomOfUser(ctx.from.id)
 
-  if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
+  if (!currentRoom) {
+    // TODO: Unfortunately, the room could not be created
+    return ctx.scene.reset()
+  }
 
   const [roomId, { startDate, participants }] = currentRoom
   const chat = await ctx.telegram.getChat(roomId)

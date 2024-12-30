@@ -11,7 +11,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "ignoreDeprecations": "5.0",
-    "importsNotUsedAsValues": "error",
+    "verbatimModuleSyntax": false,
     "noPropertyAccessFromIndexSignature": true,
     "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": true,
@@ -26,7 +26,7 @@
     "paths": {
       "@bot": ["bot/index"],
       "@config": ["common/tools/config"],
-      "@constants": ["common/constants"],
+      "@constants/*": ["common/constants/*"],
       "@game/*": ["bot/game/*"],
       "@i18n": ["common/i18n/index"],
       "@models/*": ["common/models/*"],

@@ -1,7 +1,7 @@
 import 'module-alias/register'
 
 import bot from '@bot'
-import { ALLOWED_UPDATES } from '@constants'
+import { ALLOWED_UPDATES } from '@constants/common'
 import type { Telegraf } from 'telegraf'
 
 const launchOptions: Telegraf.LaunchOptions = {

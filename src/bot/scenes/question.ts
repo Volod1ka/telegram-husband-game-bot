@@ -1,9 +1,6 @@
-import {
-  INLINE_KEYBOARD_CHAT_WITH_BOT,
-  MAX_QUESTION_LENGTH,
-  QUESTION_TIMEOUT,
-  SCENES,
-} from '@constants'
+import { getInlineKeyboardChatWithBot } from '@constants/inlineKeyboard'
+import { MAX_QUESTION_LENGTH, QUESTION_TIMEOUT } from '@constants/properties'
+import { SCENES } from '@constants/scene'
 import game from '@game/engine'
 import { t } from '@i18n'
 import type { Chat, User } from '@telegraf/types'
@@ -53,16 +50,23 @@ const handleTimeoutEvent = async (
 // ------- [ bot context ] ------- //
 
 const requestForQuestion: ContextFn = async ctx => {
-  if (!ctx.from) return ctx.scene.reset()
+  if (!ctx.from) {
+    return ctx.scene.reset()
+  }
 
   const currentRoom = game.getRoomOfUser(ctx.from.id)
 
-  if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
+  if (!currentRoom) {
+    // TODO: Unfortunately, the room could not be created
+    return ctx.scene.reset()
+  }
 
   const [roomId] = currentRoom
   const husband = game.getHusbandInGame(roomId)
 
-  if (!husband) return ctx.scene.reset()
+  if (!husband) {
+    return ctx.scene.reset()
+  }
 
   await ctx.telegram.sendMessage(
     husband[0],
@@ -80,9 +84,13 @@ const requestForQuestion: ContextFn = async ctx => {
 // ------- [ text message ] ------- //
 
 const checkSendQuestionAvailability: TextMessageFn = async (ctx, next) => {
-  if (ctx.chat.type !== 'private') return
+  if (ctx.chat.type !== 'private') {
+    return
+  }
 
-  if (!game.isHusbandRole(ctx.message.from.id)) return ctx.react('👨‍💻')
+  if (!game.isHusbandRole(ctx.message.from.id)) {
+    return ctx.react('👨‍💻')
+  }
 
   if (ctx.message.text.length > MAX_QUESTION_LENGTH) {
     return Promise.all([
@@ -107,7 +115,7 @@ const handleSendQuestion: TextMessageFn = async ctx => {
     ctx.react(getRandomEmoji()),
     ctx.telegram.sendMessage(roomId, textMessage, {
       parse_mode: 'HTML',
-      reply_markup: INLINE_KEYBOARD_CHAT_WITH_BOT(ctx.botInfo.username)
+      reply_markup: getInlineKeyboardChatWithBot(ctx.botInfo.username)
         .reply_markup,
     }),
   ])

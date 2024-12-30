@@ -1,7 +1,5 @@
-import {
-  BOT_COMMANDS_WITH_DESCRIPTION,
-  DEFAULT_ADMINISTRATOR_RIGHTS,
-} from '@constants'
+import { DEFAULT_ADMINISTRATOR_RIGHTS } from '@constants/common'
+import { BOT_COMMANDS_WITH_DESCRIPTION } from '@constants/interactive'
 import { store } from '@stores'
 import { handleCatch } from '@tools/utils'
 import { Composer } from 'telegraf'

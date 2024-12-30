@@ -1,9 +1,7 @@
-import {
-  ACCEPT_HUSBAND_ROLE_TIMEOUT,
-  BOT_ACTIONS,
-  INLINE_KEYBOARD_ROLE,
-  SCENES,
-} from '@constants'
+import { getInlineKeyboardRole } from '@constants/inlineKeyboard'
+import { BOT_ACTIONS } from '@constants/interactive'
+import { ACCEPT_HUSBAND_ROLE_TIMEOUT } from '@constants/properties'
+import { SCENES } from '@constants/scene'
 import game from '@game/engine'
 import { t } from '@i18n'
 import type { Chat, Message, User } from '@telegraf/types'
@@ -35,11 +33,16 @@ const handleTimeoutEvent = async (
 // ------- [ bot context ] ------- //
 
 const searchHusband = async (ctx: BotContext) => {
-  if (!ctx.from) return ctx.scene.reset()
+  if (!ctx.from) {
+    return ctx.scene.reset()
+  }
 
   const currentRoom = game.getRoomOfUser(ctx.from.id)
 
-  if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
+  if (!currentRoom) {
+    // TODO: Unfortunately, the room could not be created
+    return ctx.scene.reset()
+  }
 
   const [roomId] = currentRoom
   const [participantId, { user }] = game.getRandomRequestHusbandRole(roomId)
@@ -49,7 +52,7 @@ const searchHusband = async (ctx: BotContext) => {
     t('husband.search'),
     {
       parse_mode: 'HTML',
-      reply_markup: INLINE_KEYBOARD_ROLE.reply_markup,
+      reply_markup: getInlineKeyboardRole.reply_markup,
     },
   )
   const nextUserCtx = {
@@ -72,7 +75,9 @@ const sendMessageToParticipations = async (
   const { participants } = game.allRooms.get(chatId)!
 
   for (const [participantId, participant] of participants) {
-    if (participant.role !== 'member' || participant.afk) continue
+    if (participant.role !== 'member' || participant.afk) {
+      continue
+    }
 
     await ctx.telegram.sendMessage(
       participantId,
@@ -105,32 +110,32 @@ const handlePickHusbandRole = async (ctx: BotContext, accepted: boolean) => {
 
   game.unregisterTimeoutEvent(roomId)
 
-  switch (status) {
-    case 'accept':
-      return completeHusbandSearch(ctx, roomId)
-    case 'deny': {
-      const allCanceled = game.allСanceledHusbandRole(roomId)
+  if (status === 'accept') {
+    return completeHusbandSearch(ctx, roomId)
+  }
 
-      if (!allCanceled) {
-        return searchHusband(ctx)
-      }
+  if (status === 'deny') {
+    const allCanceled = game.allСanceledHusbandRole(roomId)
 
-      const [husbandId, { user }] = game.getRandomRequestHusbandRole(roomId)
-
-      game.acceptHusbandRole(roomId, user, true)
-
-      await Promise.all([
-        ctx.telegram
-          .sendDice(husbandId, { emoji: '🎲' })
-          .catch(error => handleCatch(error, ctx)),
-        ctx.telegram
-          .sendMessage(husbandId, t('husband.random_role'), {
-            parse_mode: 'HTML',
-          })
-          .catch(error => handleCatch(error, ctx)),
-        completeHusbandSearch(ctx, roomId),
-      ])
+    if (!allCanceled) {
+      return searchHusband(ctx)
     }
+
+    const [husbandId, { user }] = game.getRandomRequestHusbandRole(roomId)
+
+    game.acceptHusbandRole(roomId, user, true)
+
+    await Promise.all([
+      ctx.telegram
+        .sendDice(husbandId, { emoji: '🎲' })
+        .catch(error => handleCatch(error, ctx)),
+      ctx.telegram
+        .sendMessage(husbandId, t('husband.random_role'), {
+          parse_mode: 'HTML',
+        })
+        .catch(error => handleCatch(error, ctx)),
+      completeHusbandSearch(ctx, roomId),
+    ])
   }
 }
 

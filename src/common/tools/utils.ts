@@ -1,11 +1,11 @@
 import {
-  BOT_COMMANDS,
   DEFAULT_ADMINISTRATOR_RIGHTS,
   DEFAULT_GAME_ROOM,
   EMPTY_ROOM_EVENT,
   REACTIONS,
   TELEGRAM_MESSAGE_LINK,
-} from '@constants'
+} from '@constants/common'
+import { BOT_COMMANDS } from '@constants/interactive'
 import game from '@game/engine'
 import type { GameRoom, RoomEvent } from '@models/game'
 import type { Participant } from '@models/roles'
@@ -26,7 +26,9 @@ export const getSessionKey = (ctx: BotContext) => {
   const fromId = ctx.from?.id
   const chatId = ctx.chat?.id
 
-  if (!fromId || !chatId) return undefined
+  if (!fromId || !chatId) {
+    return undefined
+  }
 
   if (ctx.chat.type === 'private') {
     const currentRoom = game.getRoomOfUser(chatId)
@@ -71,6 +73,7 @@ export const sortingMembersByNumber = (
   if (prev.role === 'member' && next.role === 'member') {
     return prev.number - next.number
   }
+
   return prev.role === 'member' ? -1 : 1
 }
 
@@ -110,6 +113,7 @@ export const handleCatch = (
   solution?: () => unknown,
 ) => {
   logHandleError(error, ctx)
+
   return solution?.() ?? null
 }
 

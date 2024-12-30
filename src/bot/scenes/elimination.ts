@@ -1,9 +1,7 @@
-import {
-  BOT_ACTIONS,
-  ELIMINATION_TIMEOUT,
-  INLINE_KEYBOARD_ELIMINATION,
-  SCENES,
-} from '@constants'
+import { getInlineKeyboardElimination } from '@constants/inlineKeyboard'
+import { BOT_ACTIONS } from '@constants/interactive'
+import { ELIMINATION_TIMEOUT } from '@constants/properties'
+import { SCENES } from '@constants/scene'
 import game from '@game/engine'
 import { t } from '@i18n'
 import type { Participant } from '@models/roles'
@@ -58,7 +56,9 @@ const handleTimeoutEvent = async (
 ) => {
   const { elimination } = game.allRooms.get(chatId)!
 
-  if (!elimination) return
+  if (!elimination) {
+    return
+  }
 
   await editMessageText(
     ctx,
@@ -91,10 +91,15 @@ const registerTimeoutEvent = (
 // ------- [ bot context ] ------- //
 
 const startElimination: ContextFn = async ctx => {
-  if (!ctx.from) return ctx.scene.reset()
+  if (!ctx.from) {
+    return ctx.scene.reset()
+  }
 
   const currentRoom = game.getRoomOfUser(ctx.from.id)
-  if (!currentRoom) return ctx.scene.reset() // TODO: ops не вдалось створити кімнату
+  if (!currentRoom) {
+    // TODO: Unfortunately, the room could not be created
+    return ctx.scene.reset()
+  }
 
   const [roomId] = currentRoom
   const members = game.getMembersInGame(roomId)
@@ -162,7 +167,7 @@ const handleContinueElimination = async (
     husbandId,
     textMessage,
     {
-      reply_markup: INLINE_KEYBOARD_ELIMINATION(members, canSkip).reply_markup,
+      reply_markup: getInlineKeyboardElimination(members, canSkip).reply_markup,
       parse_mode: 'HTML',
     },
   )
@@ -266,7 +271,9 @@ const handleCallbackQueryChoose: CallbackQueryDataFn = async ctx => {
   const userId = ctx.from.id
   const currentRoom = game.getRoomOfUser(userId)
 
-  if (!currentRoom) return
+  if (!currentRoom) {
+    return
+  }
 
   const [roomId, { elimination }] = currentRoom
   const data = ctx.callbackQuery.data

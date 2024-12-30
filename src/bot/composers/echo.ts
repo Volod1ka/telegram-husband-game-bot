@@ -1,7 +1,5 @@
-import {
-  AUTO_CLEAR_MESSAGE_TIMEOUT,
-  INLINE_KEYBOARD_INVITE_CHAT,
-} from '@constants'
+import { getInlineKeyboardInviteChat } from '@constants/inlineKeyboard'
+import { AUTO_CLEAR_MESSAGE_TIMEOUT } from '@constants/properties'
 import game from '@game/engine'
 import { t } from '@i18n'
 import type { MessageId } from '@telegraf/types'
@@ -25,17 +23,19 @@ const autoClearMessage = (
 // ------- [ text message ] ------- //
 
 const handleStartCommand: TextMessageFn = async (ctx, next) => {
-  if (ctx.chat.type !== 'private') return next()
+  if (ctx.chat.type !== 'private') {
+    return next()
+  }
 
   if (game.getRoomOfUser(ctx.from.id)) {
     return ctx.react('🌚')
   }
 
+  const text = t('start.welcome', { user: mentionWithHTML(ctx.from) })
+  const inlineKeyboardMarkup = getInlineKeyboardInviteChat(ctx.botInfo.username)
+
   await Promise.all([
-    ctx.replyWithHTML(
-      t('start.welcome', { user: mentionWithHTML(ctx.from) }),
-      INLINE_KEYBOARD_INVITE_CHAT(ctx.botInfo.username),
-    ),
+    ctx.replyWithHTML(text, inlineKeyboardMarkup),
     ctx.react(getRandomEmoji()),
   ])
 }

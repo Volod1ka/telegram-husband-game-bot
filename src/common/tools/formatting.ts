@@ -1,11 +1,13 @@
 import {
   EMPTY_ANSWER,
-  EXTRA_MAX_SHOWN_USER_NAME_LENGTH,
-  HTML_TAG_SYMBOLS_PATTERN,
-  MAX_SHOWN_USER_NAME_LENGTH,
   MAX_TEXT_MESSAGE_LENGTH,
   TELEGRAM_MENTION,
-} from '@constants'
+} from '@constants/common'
+import {
+  EXTRA_MAX_SHOWN_USER_NAME_LENGTH,
+  MAX_SHOWN_USER_NAME_LENGTH,
+} from '@constants/properties'
+import { HTML_TAG_SYMBOLS_PATTERN } from '@constants/regex'
 import { t } from '@i18n'
 import type { GameRoom } from '@models/game'
 import type { Participant } from '@models/roles'
@@ -85,7 +87,9 @@ export const getAnswerOfMembers = (
   const afkMessages: string[] = []
 
   for (const [memberId, member] of membersInGame) {
-    if (member.role !== 'member') continue
+    if (member.role !== 'member') {
+      continue
+    }
 
     const { afk, eliminated, number, user } = member
     const answer = answers.get(memberId)

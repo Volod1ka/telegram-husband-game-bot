@@ -39,7 +39,7 @@
   "_moduleAliases": {
     "@bot": "src/bot/index.ts",
     "@config": "src/common/tools/config.ts",
-    "@constants": "src/common/constants.ts",
+    "@constants": "src/common/constants",
     "@game": "src/bot/game",
     "@i18n": "src/common/i18n/index.ts",
     "@models": "src/common/models",

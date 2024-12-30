@@ -1,16 +1,15 @@
+import { PARTICIPATE_CALLBACK_ANSWERS } from '@constants/callback'
+import { getInlineKeyboardParticipate } from '@constants/inlineKeyboard'
+import { BOT_ACTIONS, BOT_COMMANDS } from '@constants/interactive'
 import {
   AUTO_CLEAR_MESSAGE_TIMEOUT,
-  BOT_ACTIONS,
-  BOT_COMMANDS,
   EXTEND_REGISTRATION_TIMEOUT,
-  INLINE_KEYBOARD_PARTICIPATE,
   MAX_PARTICIPANTS_AMOUNT,
   MIN_PARTICIPANTS_AMOUNT,
-  PARTICIPATE_CALLBACK_ANSWERS,
   REGISTRATION_REMIND_TIMEOUT,
   REGISTRATION_TIMEOUT,
-  SCENES,
-} from '@constants'
+} from '@constants/properties'
+import { SCENES } from '@constants/scene'
 import game from '@game/engine'
 import { t } from '@i18n'
 import type { MessageId } from '@telegraf/types'
@@ -56,7 +55,9 @@ const registrationRemind = async (ctx: BotContext) => {
 // ------- [ bot context ] ------- //
 
 const completeRegistration: ContextFn = async ctx => {
-  if (!ctx.chat || ctx.chat.type === 'private') return
+  if (!ctx.chat || ctx.chat.type === 'private') {
+    return
+  }
 
   const chatId = ctx.chat.id
   const chatTitle = formattedChatTitleForHTML(ctx.chat)
@@ -76,15 +77,14 @@ const completeRegistration: ContextFn = async ctx => {
   let textMessage = ''
   const messageId = currentRoom.replyId
 
-  switch (roomStatus) {
-    case 'not_enough_participants':
-      textMessage = t('stop_game.not_enough_participants', {
-        amount: MIN_PARTICIPANTS_AMOUNT,
-      })
-      break
-    case 'next_status':
-      textMessage = t('start_game.next_status', { chat_title: chatTitle })
-      break
+  if (roomStatus === 'not_enough_participants') {
+    textMessage = t('stop_game.not_enough_participants', {
+      amount: MIN_PARTICIPANTS_AMOUNT,
+    })
+  }
+
+  if (roomStatus === 'next_status') {
+    textMessage = t('start_game.next_status', { chat_title: chatTitle })
   }
 
   try {
@@ -117,7 +117,9 @@ const deleteMessageAndCheckPrivate: CommandFn = async ctx => {
 }
 
 const checkStartGameAvailability: CommandFn = async (ctx, next) => {
-  if (await deleteMessageAndCheckPrivate(ctx, next)) return
+  if (await deleteMessageAndCheckPrivate(ctx, next)) {
+    return
+  }
 
   if (!game.createRoom(ctx.chat.id)) {
     const { registration } = game.allRooms.get(ctx.chat.id)!
@@ -143,11 +145,15 @@ const checkGameAvailability = async (
   next: NextContext,
   action: 'start_now' | 'stop',
 ) => {
-  if (await deleteMessageAndCheckPrivate(ctx, next)) return
+  if (await deleteMessageAndCheckPrivate(ctx, next)) {
+    return
+  }
 
   const currentRoom = game.allRooms.get(ctx.chat.id)
 
-  if (currentRoom?.status !== 'registration') return
+  if (currentRoom?.status !== 'registration') {
+    return
+  }
 
   const admins = await ctx.telegram.getChatAdministrators(ctx.chat.id)
   const isAdmin = admins.find(
@@ -186,7 +192,7 @@ const handleStartGame: CommandFn = async (ctx, next) => {
   const chatId = ctx.chat.id
   const { message_id } = await ctx.replyWithHTML(
     t('start_game.base', { chat_title: formattedChatTitleForHTML(ctx.chat) }),
-    INLINE_KEYBOARD_PARTICIPATE(ctx.botInfo.username),
+    getInlineKeyboardParticipate(ctx.botInfo.username),
   )
 
   await ctx.pinChatMessage(message_id)
@@ -242,18 +248,24 @@ const handleStopGame: CommandFn = async ctx => {
 }
 
 const handleExtendGame: CommandFn = async (ctx, next) => {
-  if (await deleteMessageAndCheckPrivate(ctx, next)) return
+  if (await deleteMessageAndCheckPrivate(ctx, next)) {
+    return
+  }
 
   const roomStatus = game.getRoomStatus(ctx.chat.id)
 
-  if (roomStatus !== 'registration') return
+  if (roomStatus !== 'registration') {
+    return
+  }
 
   const remains = game.extendRegistrationTimeout(
     ctx.chat.id,
     EXTEND_REGISTRATION_TIMEOUT,
   )
 
-  if (remains <= 0) return
+  if (remains <= 0) {
+    return
+  }
 
   const { message_id } = await ctx.replyWithHTML(
     t('extend_game.base', {
@@ -268,7 +280,9 @@ const handleExtendGame: CommandFn = async (ctx, next) => {
 // ------- [ action ] ------- //
 
 const checkParticipationAvailability: ActionFn = async (ctx, next) => {
-  if (!ctx.chat || ctx.chat?.type === 'private') return
+  if (!ctx.chat || ctx.chat?.type === 'private') {
+    return
+  }
 
   return next()
 }
@@ -314,7 +328,7 @@ const handleParticipate: ActionFn = async (ctx, next) => {
 
   await ctx.editMessageText(textMessage, {
     parse_mode: 'HTML',
-    reply_markup: INLINE_KEYBOARD_PARTICIPATE(ctx.botInfo.username)
+    reply_markup: getInlineKeyboardParticipate(ctx.botInfo.username)
       .reply_markup,
   })
 }
