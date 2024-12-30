@@ -1,5 +1,7 @@
 import {
   EMPTY_ANSWER,
+  EXTRA_MAX_SHOWN_USER_NAME_LENGTH,
+  HTML_TAG_SYMBOLS_PATTERN,
   MAX_SHOWN_USER_NAME_LENGTH,
   MAX_TEXT_MESSAGE_LENGTH,
   TELEGRAM_MENTION,
@@ -29,7 +31,8 @@ export const lowercaseFirstLetter = (text: string): string => {
 }
 
 export const shortNameParticipant = ({ first_name }: User) => {
-  return first_name.length > MAX_SHOWN_USER_NAME_LENGTH
+  return first_name.length >
+    MAX_SHOWN_USER_NAME_LENGTH + EXTRA_MAX_SHOWN_USER_NAME_LENGTH
     ? `${safeSlice(first_name, 0, MAX_SHOWN_USER_NAME_LENGTH)}…`
     : first_name
 }
@@ -41,7 +44,16 @@ export const mentionWithHTML = (user: User, text: string = '') => {
 }
 
 export const formattedTextForHTML = (text: string) => {
-  return text.replaceAll('<', '&lt;')
+  const SYMBOLS_TO_REPLACE: Record<string, string> = {
+    '<': '&lt;',
+    '>': '&gt;',
+    '&': '&amp;',
+  }
+
+  return text.replace(
+    HTML_TAG_SYMBOLS_PATTERN,
+    match => SYMBOLS_TO_REPLACE[match] ?? match,
+  )
 }
 
 export const formattedChatTitleForHTML = (chat: Chat) => {

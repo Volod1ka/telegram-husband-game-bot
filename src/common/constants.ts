@@ -1,3 +1,5 @@
+// TODO: split the constants into different files
+
 import Config from '@config'
 import type { AddParticipantToRoomStatus } from '@game/types'
 import { t } from '@i18n'
@@ -14,26 +16,31 @@ import ms from 'ms'
 import { Markup } from 'telegraf'
 import type { UpdateType } from 'telegraf/typings/telegram-types'
 
+// ------- [ regex ] ------- //
+
+export const HTML_TAG_SYMBOLS_PATTERN = /[<>&]/g
+
 // ------- [ properties ] ------- //
 
 const DEV = Config.ENV === 'development'
 
-export const MAX_SHOWN_USER_NAME_LENGTH = 20
+export const MAX_SHOWN_USER_NAME_LENGTH = 20 as const
+export const EXTRA_MAX_SHOWN_USER_NAME_LENGTH = 2 as const
 
-export const ELIMINATION_SKIPS_AMOUNT = 1
+export const ELIMINATION_SKIPS_AMOUNT = 1 as const
 export const MIN_PARTICIPANTS_AMOUNT = DEV ? 2 : 4
-export const MAX_PARTICIPANTS_AMOUNT = 15
+export const MAX_PARTICIPANTS_AMOUNT = 15 as const
 
-export const MAX_ANSWER_LENGTH = 420
-export const MAX_QUESTION_LENGTH = 320
-export const MAX_HUSBAND_MESSAGE_LENGTH = 360
+export const MAX_ANSWER_LENGTH = 420 as const
+export const MAX_QUESTION_LENGTH = 320 as const
+export const MAX_HUSBAND_MESSAGE_LENGTH = 360 as const
 
 export const REGISTRATION_TIMEOUT = ms(DEV ? '20s' : '1m')
 export const MAX_REGISTRATION_TIMEOUT = ms('3m')
 export const EXTEND_REGISTRATION_TIMEOUT = ms(DEV ? '30s' : '40s')
 export const ACCEPT_HUSBAND_ROLE_TIMEOUT = ms(DEV ? '20s' : '40s')
-export const QUESTION_TIMEOUT = ms(DEV ? '30s' : '5m')
-export const ANSWERS_TIMEOUT = ms(DEV ? '50s' : '7m')
+export const QUESTION_TIMEOUT = ms(DEV ? '30s' : '15m')
+export const ANSWERS_TIMEOUT = ms(DEV ? '50s' : '18m')
 export const ELIMINATION_TIMEOUT = ms(DEV ? '20s' : '12m')
 
 export const AUTO_CLEAR_MESSAGE_TIMEOUT = ms('7s')
@@ -42,13 +49,13 @@ export const REGISTRATION_REMIND_TIMEOUT = ms('10s')
 
 // ------- [ default data ] ------- //
 
-export const TELEGRAM_LINK = 'https://t.me/'
-export const TELEGRAM_MESSAGE_LINK = `${TELEGRAM_LINK}c/`
-export const TELEGRAM_MENTION = 'tg://user?id='
+export const TELEGRAM_LINK = 'https://t.me/' as const
+export const TELEGRAM_MESSAGE_LINK = `${TELEGRAM_LINK}c/` as const
+export const TELEGRAM_MENTION = 'tg://user?id=' as const
 
-export const MAX_TEXT_MESSAGE_LENGTH = 4096
+export const MAX_TEXT_MESSAGE_LENGTH = 4096 as const
 
-export const EMPTY_ANSWER = ' – '
+export const EMPTY_ANSWER = ' – ' as const
 
 export const DEFAULT_GAME_ROOM: GameRoom = {
   startDate: Date.now(),
@@ -118,7 +125,7 @@ export const SCENES: Record<ScenesName, ScenesName> = {
   answers: 'answers',
   elimination: 'elimination',
   finished: 'finished',
-}
+} as const
 
 // ------- [ interactive ] ------- //
 
@@ -128,14 +135,14 @@ export const BOT_COMMANDS: Record<CommandTrigger, CommandTrigger> = {
   stop_game: 'stop_game',
   extend_game: 'extend_game',
   help: 'help',
-}
+} as const
 
 export const BOT_ACTIONS: Record<ActionTrigger, ActionTrigger> = {
   participate: 'participate',
   accept_husband_role: 'accept_husband_role',
   deny_husband_role: 'deny_husband_role',
   skip_elimination: 'skip_elimination',
-}
+} as const
 
 export const BOT_COMMANDS_WITH_DESCRIPTION: BotCommand[] = [
   {
@@ -170,7 +177,7 @@ export const PARTICIPATE_CALLBACK_ANSWERS: Record<
   participant_added: t('answer_cb.participate.participant_added'),
   participant_in_game: t('answer_cb.participate.participant_in_game'),
   room_not_exist: t('answer_cb.participate.room_not_exist'),
-}
+} as const
 
 // ------- [ inline keyboard ] ------- //
 
